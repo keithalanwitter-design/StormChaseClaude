@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WHIRL Index</title>
+<meta name="description" content="A Midwest tornado-chasing research hub: the WHIRL Index calculator, a chase field guide, and a case library of Illinois and Missouri tornadoes and busts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --bg:#E9ECE8; --paper:#F7F8F5; --ink:#14222B; --muted:#56656B; --rule:#C5CCC8;
+  --teal:#0F5E6B; --teal-soft:#D4E4E4;
+  --scope:#11283A; --scope-line:#2E4B5E; --beam:#7FD6B4;
+  --tor:#B8322A; --bust:#5F7680;
+  --z1:#4FA35A; --z2:#E2C14A; --z3:#E0812F; --z4:#C2362E; --z5:#A33A9E;
+  --head:'Barlow Semi Condensed', 'Arial Narrow', sans-serif;
+  --body:'IBM Plex Sans', system-ui, sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);font-variant-numeric:tabular-nums}
+a{color:var(--teal);text-underline-offset:3px}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,tr:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+h1,h2,h3{font-family:var(--head);line-height:1.08;margin:0}
+h2{font-size:clamp(30px,4vw,42px);font-weight:700;letter-spacing:-.01em}
+h3{font-size:22px;font-weight:600}
+p{margin:0 0 1em;max-width:68ch}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:1000;background:rgba(233,236,232,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule)}
+.bar .wrap{display:flex;align-items:center;gap:24px;height:56px}
+.brand{font-family:var(--head);font-weight:700;font-size:24px;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:10px}
+.brand svg{width:26px;height:26px}
+.bar nav{display:flex;gap:18px;overflow-x:auto;scrollbar-width:none}
+.bar nav a{color:var(--muted);text-decoration:none;font-weight:500;font-size:15px;white-space:nowrap}
+.bar nav a:hover{color:var(--ink)}
+
+/* hero */
+.hero{padding:40px 0 56px}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:40px;align-items:center}
+.hero h1{font-size:clamp(40px,5vw,58px);font-weight:700;letter-spacing:-.015em;margin-bottom:20px}
+.lede{font-size:18px;color:var(--muted);margin-bottom:28px}
+.stat{border-left:4px solid var(--tor);padding:4px 0 4px 16px;margin-bottom:28px}
+.stat b{display:block;font-family:var(--head);font-size:56px;line-height:1;font-weight:700}
+.stat span{color:var(--muted);font-size:15px}
+.btns{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-block;padding:11px 18px;border-radius:6px;font-weight:600;text-decoration:none;font-size:15px;border:1.5px solid var(--teal)}
+.btn.primary{background:var(--teal);color:#fff}
+.btn.ghost{color:var(--teal)}
+.scope{background:var(--scope);border-radius:14px;padding:12px;position:relative}
+.scope svg{display:block;width:100%;height:auto}
+.scope-key{display:flex;flex-wrap:wrap;gap:16px;color:#B9C8CF;font-size:13px;padding:8px 8px 4px}
+.scope-key i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.state{fill:#163449;stroke:var(--scope-line);stroke-width:1}
+.state.il{fill:#1B3F57;stroke:#4D7389}
+.ring{fill:none;stroke:#2F5468;stroke-dasharray:3 5}
+.sweep{transform-origin:var(--cx) var(--cy);animation:spin 6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ping{animation:ping 6s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ping{0%{opacity:1;transform:scale(1.9)}12%{opacity:.85;transform:scale(1)}60%,100%{opacity:.45;transform:scale(1)}}
+.site-lbl{font:600 17px var(--body);fill:#8FB0BE}
+.home-lbl{font:600 18px var(--body);fill:#E7C76A}
+
+/* sections */
+section{padding:64px 0;border-top:1px solid var(--rule)}
+.sec-head{display:flex;justify-content:space-between;align-items:end;gap:24px;flex-wrap:wrap;margin-bottom:24px}
+.sec-head p{color:var(--muted);margin:8px 0 0}
+.panel{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:24px}
+
+/* today */
+.today{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:24px}
+.today img{width:100%;height:auto;border-radius:6px;border:1px solid var(--rule);background:#fff}
+.links{list-style:none;margin:0;padding:0}
+.links li{border-bottom:1px solid var(--rule);padding:12px 0}
+.links li:last-child{border-bottom:0}
+.links a{font-weight:600}
+.links small{display:block;color:var(--muted);font-size:14px}
+.radars{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.radars a{font-size:14px;font-weight:600;padding:4px 10px;border:1px solid var(--rule);border-radius:20px;text-decoration:none;background:#fff}
+
+/* calculator */
+.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+.field{margin-bottom:18px}
+.field label{display:flex;justify-content:space-between;font-weight:600;font-size:15px;margin-bottom:6px}
+.field label output{font-weight:500;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--teal)}
+select{width:100%;padding:9px 10px;font:inherit;border:1px solid var(--rule);border-radius:6px;background:#fff}
+.check{display:flex;gap:10px;align-items:center;font-weight:600;font-size:15px}
+.check input{width:18px;height:18px;accent-color:var(--teal)}
+.result{display:flex;flex-direction:column}
+.score{font-family:var(--head);font-size:96px;font-weight:700;line-height:.9}
+.verdict{font-size:20px;font-weight:600;margin:6px 0 4px}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin:18px 0 6px;position:relative}
+.scale span{height:12px}
+.scale span:nth-child(1){background:var(--z1);border-radius:6px 0 0 6px}.scale span:nth-child(2){background:var(--z2)}.scale span:nth-child(3){background:var(--z3)}.scale span:nth-child(4){background:var(--z4)}.scale span:nth-child(5){background:var(--z5);border-radius:0 6px 6px 0}
+.marker{position:absolute;top:-6px;width:4px;height:24px;background:var(--ink);border-radius:2px;transition:left .35s ease}
+.scale-lbl{display:flex;justify-content:space-between;color:var(--muted);font-size:13px}
+.terms{margin-top:22px;border-top:1px solid var(--rule);padding-top:14px}
+.term{display:grid;grid-template-columns:120px 1fr 44px;gap:10px;align-items:center;font-size:14px;margin:7px 0}
+.term .track{height:8px;background:var(--teal-soft);border-radius:4px;overflow:hidden}
+.term .fill{height:100%;background:var(--teal);transition:width .35s ease}
+.term b{text-align:right;font-weight:600}
+.note{font-size:14px;color:var(--muted);margin-top:14px}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl th{text-align:left;font-weight:600;color:var(--muted);font-size:14px;padding:10px 12px;border-bottom:2px solid var(--rule)}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+.go{color:#2E7D3B;font-weight:600}.mid{color:#9A6A00;font-weight:600}.no{color:var(--tor);font-weight:600}
+.scroll{overflow-x:auto}
+
+/* steps */
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;gap:12px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:14px;background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:16px 18px}
+.steps li::before{content:counter(s);font-family:var(--head);font-size:30px;font-weight:700;color:var(--teal);line-height:1}
+.steps b{display:block;font-size:17px}
+.steps span{color:var(--muted)}
+.steps li.commit{border:2px solid var(--teal);background:var(--teal-soft)}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:28px}
+.cols2 ul{margin:8px 0 0;padding-left:20px}
+.cols2 li{margin:6px 0}
+
+/* cases */
+#map{height:460px;border-radius:10px;border:1px solid var(--rule);z-index:1}
+.filters{display:flex;gap:8px;margin:18px 0 12px;flex-wrap:wrap}
+.filters button{font:600 14px var(--body);padding:7px 14px;border-radius:20px;border:1.5px solid var(--rule);background:#fff;color:var(--ink);cursor:pointer}
+.filters button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+.case-row{cursor:pointer}
+.case-row:hover td{background:#fff}
+.case-row td:first-child{font-weight:600}
+.tbl .env{color:var(--muted);font-size:14px;max-width:34ch}
+.sortbtn{background:none;border:0;font:inherit;color:inherit;cursor:pointer;padding:0}
+.sortbtn::after{content:" ↕";font-size:12px;opacity:.6}
+.leaflet-popup-content{font:14px/1.45 var(--body)}
+
+/* research */
+.ranks{list-style:none;margin:0;padding:0}
+.ranks li{display:grid;grid-template-columns:minmax(160px,1.2fr) minmax(0,2fr) 140px;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid var(--rule)}
+.ranks li b{font-weight:600}
+.ranks .what{color:var(--muted);font-size:14px}
+.strength{display:flex;gap:3px}
+.strength i{flex:1;height:10px;background:var(--teal-soft);border-radius:2px}
+.strength i.on{background:var(--teal)}
+.strength-lbl{font-size:13px;color:var(--muted);margin-top:4px}
+
+footer{padding:40px 0 60px;border-top:1px solid var(--rule);color:var(--muted);font-size:14px}
+footer ul{columns:2;padding-left:18px}
+footer li{margin:4px 0;break-inside:avoid}
+
+@media (max-width:860px){
+  .hero .wrap,.today,.calc,.cols2{grid-template-columns:1fr}
+  .ranks li{grid-template-columns:1fr}
+  footer ul{columns:1}
+  #map{height:380px}
+  .score{font-size:80px}
+}
+@media (max-width:640px){
+  #case-tbl thead{display:none}
+  #case-tbl tr{display:block;padding:14px 4px;border-bottom:1px solid var(--rule)}
+  #case-tbl td{display:block;border:0;padding:2px 0}
+  #case-tbl td:first-child{font-size:17px;margin-bottom:4px}
+  #go .tbl{min-width:580px}
+}
+@media (prefers-reduced-motion:reduce){
+  .sweep,.ping{animation:none}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="WHIRL home">
+      <svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="11.5" fill="none" stroke="#0F5E6B" stroke-width="2"/><circle cx="13" cy="13" r="6" fill="none" stroke="#0F5E6B" stroke-width="1.5" stroke-dasharray="2 2.5"/><path d="M13 13 L13 1.5 A11.5 11.5 0 0 1 22.5 6.5 Z" fill="#0F5E6B" opacity=".85"/><circle cx="13" cy="13" r="2" fill="#B8322A"/></svg>
+      WHIRL
+    </a>
+    <nav aria-label="Sections">
+      <a href="#today">Today</a>
+      <a href="#calculator">Calculator</a>
+      <a href="#go">Go or no-go</a>
+      <a href="#field">In the field</a>
+      <a href="#cases">Case library</a>
+      <a href="#research">Research</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <h1>Find the Midwest tornado before it finds the road.</h1>
+      <p class="lede">WHIRL is our own tornado-targeting score and chase reference for Illinois and the surrounding states, built from the research on what actually separates tornado days from busts.</p>
+      <div class="stat">
+        <b>172</b>
+        <span>confirmed Illinois tornadoes by late June 2026, a state record and at least twice any other state (<a href="https://www.nprillinois.org/illinois/2026-06-28/illinois-leads-the-nation-in-confirmed-tornadoes-after-hot-and-rainy-spring-season-most-of-them-in-central-illinois">NPR Illinois</a>)</span>
+      </div>
+      <div class="btns">
+        <a class="btn primary" href="#calculator">Score a setup</a>
+        <a class="btn ghost" href="#cases">See the case library</a>
+      </div>
+    </div>
+    <figure class="scope" style="margin:0">
+      <svg id="scope" viewBox="0 0 960 700" role="img" aria-label="Midwest map with a radar sweep centered on Lincoln, Illinois, showing 12 tornado cases and 5 busts"></svg>
+      <figcaption class="scope-key">
+        <span><i style="background:#E5544A"></i>Tornado case</span>
+        <span><i style="background:#9DB3BC"></i>Supercell bust</span>
+        <span><i style="background:#E7C76A"></i>Belleville home base</span>
+        <span>Rings every 100 miles from the Lincoln radar</span>
+      </figcaption>
+    </figure>
+  </div>
+</div>
+
+<section id="today">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <h2>Today's setup</h2>
+        <p>Start every chase day here: the SPC outlook, the current environment, and the radars that cover our area.</p>
+      </div>
+    </div>
+    <div class="today">
+      <div class="panel">
+        <h3 style="margin-bottom:12px">SPC Day 1 convective outlook</h3>
+        <a href="https://www.spc.noaa.gov/products/outlook/day1otlk.html"><img src="https://www.spc.noaa.gov/products/outlook/day1otlk.gif" alt="Current SPC Day 1 convective outlook map" loading="lazy"></a>
+        <p class="note">Updates live from the Storm Prediction Center. Tap the map for the full discussion and tornado probabilities.</p>
+      </div>
+      <div class="panel">
+        <ul class="links">
+          <li><a href="https://www.spc.noaa.gov/products/outlook/day2otlk.html">SPC Day 2 outlook</a><small>The night-before read.</small></li>
+          <li><a href="https://www.spc.noaa.gov/exper/mesoanalysis/new/viewsector.php?sector=20">SPC mesoanalysis, Midwest sector</a><small>Live SRH, STP, LCL, CIN and surface fronts.</small></li>
+          <li><a href="https://www.spc.noaa.gov/products/md/">Mesoscale discussions</a><small>Where SPC is watching in the next few hours.</small></li>
+          <li><a href="https://www.spc.noaa.gov/products/watch/">Active watches</a><small>Tornado and severe thunderstorm watches.</small></li>
+          <li><a href="https://www.spc.noaa.gov/climo/reports/today.html">Today's storm reports</a><small>Ground truth as it comes in.</small></li>
+          <li>
+            <span style="font-weight:600">Our radars</span>
+            <div class="radars">
+              <a href="https://radar.weather.gov/station/kilx/standard">KILX Lincoln</a>
+              <a href="https://radar.weather.gov/station/klsx/standard">KLSX St. Louis</a>
+              <a href="https://radar.weather.gov/station/kpah/standard">KPAH Paducah</a>
+              <a href="https://radar.weather.gov/station/klot/standard">KLOT Chicago</a>
+              <a href="https://radar.weather.gov/station/kdvn/standard">KDVN Quad Cities</a>
+              <a href="https://radar.weather.gov/station/kvwx/standard">KVWX Evansville</a>
+              <a href="https://radar.weather.gov/station/ksgf/standard">KSGF Springfield MO</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="calculator">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <h2>WHIRL calculator</h2>
+        <p>Enter the environment from SPC mesoanalysis or a forecast sounding. WHIRL v0.1 is led by 0–500 m helicity, the single best tornado discriminator in the research, and caps CAPE so instability can't drive the score.</p>
+      </div>
+    </div>
+    <div class="calc">
+      <div class="panel" id="inputs">
+        <div class="field"><label for="srh">0–500 m SRH <output for="srh" id="o-srh"></output></label><input type="range" id="srh" min="0" max="500" step="5" value="150"></div>
+        <div class="field"><label for="ebwd">Effective bulk shear <output for="ebwd" id="o-ebwd"></output></label><input type="range" id="ebwd" min="0" max="80" step="1" value="45"></div>
+        <div class="field"><label for="cape">MLCAPE <output for="cape" id="o-cape"></output></label><input type="range" id="cape" min="0" max="5000" step="50" value="1800"></div>
+        <div class="field"><label for="lcl">ML LCL height <output for="lcl" id="o-lcl"></output></label><input type="range" id="lcl" min="300" max="2500" step="25" value="900"></div>
+        <div class="field"><label for="cin">MLCIN <output for="cin" id="o-cin"></output></label><input type="range" id="cin" min="-250" max="0" step="5" value="-25"></div>
+        <div class="field"><label for="mode">Expected storm mode</label>
+          <select id="mode">
+            <option value="0.5">Likely a line (winds run along the boundary)</option>
+            <option value="1" selected>Mixed</option>
+            <option value="1.25">Likely discrete (winds cross the boundary)</option>
+          </select>
+        </div>
+        <label class="check"><input type="checkbox" id="bnd"> Active warm front or outflow boundary in the target</label>
+      </div>
+      <div class="panel result" aria-live="polite">
+        <div class="score" id="score">0.0</div>
+        <div class="verdict" id="verdict"></div>
+        <div id="advice" style="color:var(--muted)"></div>
+        <div class="scale" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><div class="marker" id="marker"></div></div>
+        <div class="scale-lbl" aria-hidden="true"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5+</span></div>
+        <div class="terms" id="terms"></div>
+        <p class="note">Draft weights, to be tuned on our case library. The environment picks the target box; radar rotation picks the storm.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="go">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <h2>Go or no-go</h2>
+        <p>Chase when surface-based instability, strong low-level helicity, low cloud bases and a way to stay discrete line up in one place. Missing one usually means a bust.</p>
+      </div>
+    </div>
+    <div class="panel scroll">
+      <table class="tbl">
+        <thead><tr><th scope="col">Check</th><th scope="col">Go</th><th scope="col">Marginal</th><th scope="col">Stay home</th></tr></thead>
+        <tbody>
+          <tr><td>SPC outlook</td><td class="go">Enhanced+ with 10%+ tornado</td><td class="mid">Slight with 5% tornado</td><td class="no">Marginal or general thunder</td></tr>
+          <tr><td>0–500 m SRH</td><td class="go">150+ m²/s²</td><td class="mid">75–150</td><td class="no">Under 75</td></tr>
+          <tr><td>STP or WHIRL</td><td class="go">2+</td><td class="mid">1–2</td><td class="no">Under 1</td></tr>
+          <tr><td>ML LCL</td><td class="go">Under 1,000 m</td><td class="mid">1,000–1,500 m</td><td class="no">Over 1,500 m</td></tr>
+          <tr><td>Surface dewpoints</td><td class="go">Mid-60s °F+</td><td class="mid">Low 60s °F</td><td class="no">Under 60 °F</td></tr>
+          <tr><td>Cap (MLCIN)</td><td class="go">Weak, eroding by mid-afternoon</td><td class="mid">Needs a strong trigger</td><td class="no">Strong all day</td></tr>
+          <tr><td>Expected mode</td><td class="go">Discrete or semi-discrete</td><td class="mid">Mixed</td><td class="no">Fast-forming line</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cols2">
+      <div class="panel">
+        <h3>The window</h3>
+        <ul>
+          <li>Storms usually fire mid-to-late afternoon once the cap breaks.</li>
+          <li>Tornadoes peak about an hour before sunset (<a href="https://par.nsf.gov/servlets/purl/10291970">Brown et al. 2021</a>).</li>
+          <li>After sunset the low-level jet can roughly double 0–1 km SRH within three hours (<a href="https://origin-east-www-spc.woc.noaa.gov/publications/mead/lljtors.pdf">SPC</a>).</li>
+          <li>Half of our Illinois–Missouri cases hit between November and March; don't put the gear away in fall.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>After morning storms</h3>
+        <ul>
+          <li>Leftover outflow boundaries are prime targets; about 70% of VORTEX tornadoes were tied to one (<a href="https://www.weather.gov/media/fgz/science/SupercellBoundaryInteractions.pdf">NWS</a>).</li>
+          <li>Recovery needs moisture as much as sunshine: watch dewpoints climb back and winds turn south.</li>
+          <li>Models bring the air back too fast; trust surface observations (<a href="https://inside.nssl.noaa.gov/efp/?p=32">NSSL</a>).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="field">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <h2>Picking the storm</h2>
+        <p>Run every candidate through these checks in order. A storm that fails one isn't the target.</p>
+      </div>
+    </div>
+    <ol class="steps">
+      <li><div><b>Is it surface-based?</b><span>It should sit in the warm sector with dewpoints in the mid-60s. If not, drop south to the warm side of the boundary.</span></div></li>
+      <li><div><b>Does it have clean inflow?</b><span>Favor the tail-end or most isolated storm with nothing to its south or southeast. If not, switch to that storm.</span></div></li>
+      <li><div><b>Is it rotating?</b><span>Look for a tightening velocity couplet. If rotation is weak, stay ahead for two or three scans and drop it if outflow surges.</span></div></li>
+      <li><div><b>Is it holding discrete?</b><span>No merging, no bowing. If it is congealing, move to the next isolated cell south.</span></div></li>
+      <li class="commit"><div><b>Commit 3–5 miles southeast of the updraft base</b><span>Keep two escape routes, south and east, and re-check every scan or two.</span></div></li>
+    </ol>
+  </div>
+</section>
+
+<section id="cases">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <h2>Case library</h2>
+        <p>Twelve Illinois and Missouri tornadoes and five supercell busts, with the radar and sounding sites our research script uses. Select a row to find it on the map.</p>
+      </div>
+    </div>
+    <div id="map" aria-label="Map of case locations"></div>
+    <div class="filters" role="group" aria-label="Filter cases">
+      <button type="button" data-f="all" aria-pressed="true">All 17</button>
+      <button type="button" data-f="1" aria-pressed="false">Tornadoes</button>
+      <button type="button" data-f="0" aria-pressed="false">Busts</button>
+    </div>
+    <div class="panel scroll" style="padding:8px 12px">
+      <table class="tbl" id="case-tbl">
+        <thead><tr>
+          <th scope="col"><button class="sortbtn" data-k="name">Event</button></th>
+          <th scope="col"><button class="sortbtn" data-k="date">When</button></th>
+          <th scope="col">Result</th>
+          <th scope="col">Radar / sounding</th>
+          <th scope="col">Known environment</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="note">Rows marked verify still need a time confirmed in the <a href="https://www.ncdc.noaa.gov/stormevents/">NOAA Storm Events Database</a>. We need at least seven more busts before the weights mean anything.</p>
+  </div>
+</section>
+
+<section id="research">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <h2>What separates tornadoes from busts</h2>
+        <p>Ranked from the largest matched studies: thousands of confirmed tornadoes compared with nearby supercells that didn't produce. Wind near the ground matters most; CAPE matters least.</p>
+      </div>
+    </div>
+    <ul class="ranks" id="ranks"></ul>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Built by Keith Witter and Brian Hart as a chase-research project. Not an official forecast: always follow NWS warnings and keep an escape route.</p>
+    <ul>
+      <li><a href="https://origin-east-www-spc.woc.noaa.gov/publications/thompson/waf-env.pdf">Thompson et al., SPC: convective modes and environments</a></li>
+      <li><a href="https://par.nsf.gov/biblio/10113870">Coffer et al.: 0–500 m SRH and STP</a></li>
+      <li><a href="https://arxiv.org/html/2503.15466v2">GridRad-Severe and HRRR supercell environments (2025)</a></li>
+      <li><a href="https://origin-east-www-spc.woc.noaa.gov/publications/smith/vrot-env.pdf">Smith et al., SPC: Vrot and tornado intensity</a></li>
+      <li><a href="https://origin-west-www-spc.woc.noaa.gov/publications/dial/waf-mode.pdf">Dial et al., SPC: storm mode along boundaries</a></li>
+      <li><a href="https://par.nsf.gov/biblio/10392883">TORUS lidar near-ground wind study</a></li>
+      <li><a href="https://spc.noaa.gov/exper/archive/events">SPC Severe Weather Events Archive</a></li>
+      <li><a href="https://docs.opendata.aws/noaa-nexrad/readme.html">NEXRAD Level II on AWS</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const GEO = {"W":960,"H":700,"states":[{"id":"01","name":"Alabama","d":"M669.3,1014.6L680.5,1012.5L680.7,1011.1L683.6,1013.3L681.8,1014.9L679.8,1014.1L676.1,1014.3L672.1,1015.4ZM667.1,706.5L667.0,705.7L695.4,705.1L707.4,704.6L737.7,704.1L755.3,703.3L762.3,702.9L792.4,701.5L804.0,701.1L807.9,718.7L813.7,742.9L818.4,763.7L821.9,779.8L825.9,796.8L834.8,835.9L836.7,837.6L836.0,839.6L838.7,841.9L840.2,850.1L842.4,854.0L846.0,857.6L846.9,862.1L848.8,864.0L847.3,870.6L850.9,871.9L853.4,874.0L851.6,877.0L849.5,877.2L850,878.5L847.3,879.8L844.9,882.9L845.7,885.9L845.6,890.7L844.6,895.6L842.1,899.8L841.6,902.3L843.3,909.1L843.0,911.6L847.1,916.2L848.1,922.8L847.0,926.1L847.5,928.4L846.2,933.0L846.7,937.4L845.4,938.6L846.6,941.4L846.2,944.4L850.5,949.2L852.1,952.7L852.7,956.1L839.4,956.9L825.2,958.1L803.3,959.6L768.6,961.4L741.7,962.3L708.5,963.8L709.2,965.9L706.9,972.4L707.3,973.6L712.1,977.9L712.8,980.1L720.2,984.3L720.9,988.1L718.1,993.9L718.8,997.0L723.0,999.7L719.4,1001.8L718.0,1006.4L716.2,1007.3L717.7,1008.6L714.7,1010.2L707.1,1012.4L699.1,1014.0L687.8,1014.6L691.4,1012.2L693.9,1013.6L700.9,1011.8L701.4,1009.9L698.3,1007.3L696.8,1005.0L692.7,1002.5L691.1,997.5L692.8,993.3L692.0,989.1L690.5,986.5L686.5,984.8L683.5,987.5L684.0,989.6L682.3,992.9L682.6,995.1L681.4,997.0L681.5,1005.0L680.0,1008.7L677.0,1009.1L677.1,1007.0L673.0,1004.9L670.0,1005.9L669.0,1004.7L665.4,1006.0L664.4,993.6L663.3,973.7L661.4,950.2L658.2,907.2L659.6,891.4L662.6,851.9L663.2,840.1L667.7,777.8L668.6,768.9L671.1,733.1L672.8,713.0L669.7,711.2Z"},{"id":"18","name":"Indiana","d":"M686.3,273.8L689.0,276.0L691.0,274.8L692.3,275.6L691.3,277.8L696.0,278.9L701.0,278.7L705.8,277.1L714.6,272.5L719.8,269.0L735.3,268.4L769.3,266.6L801.5,264.6L816.4,263.5L816.7,267.7L817.8,281.0L823.0,357.1L824.1,381.2L825.8,405.5L826.5,420.8L827.4,433.9L824.1,436.6L823.9,437.8L827.0,441.5L827.5,443.2L825.6,445.4L826.3,447.4L829.4,447.6L830.2,448.9L828.0,451.6L829.3,454.0L825.3,454.1L822.5,455.5L820.9,455.3L814.8,459.2L812.5,461.5L809.0,461.2L807.1,459.0L802.4,459.6L799.5,459.4L797.5,461.4L798.6,468.2L799.9,472.1L797.2,474.5L796.1,477.0L790.8,479.2L787.9,488.2L784.6,490.6L781.9,489.4L780.2,490.2L779.3,493.8L776.6,497.9L777.1,502.7L776.4,506.6L775.0,508.0L770.9,509.2L770.3,511.2L767.7,508.2L763.7,508.3L758.8,505.6L758.4,500.4L754.4,496.9L753.0,497.1L753.2,498.9L755.6,499.5L755.5,500.9L753.2,501.1L751.8,502.8L750.3,501.6L748.7,503.2L750.4,504.1L749.4,506.5L746.2,507.1L746.1,512.3L747.1,514.4L742.9,515.1L742.7,518.6L740.8,520.3L739.5,519.0L740.3,516.2L738.4,515.7L736.7,517.2L734.8,516.0L732.4,511.2L729.3,511.5L726.9,514.5L721.7,516.2L719.9,517.9L719.2,523.3L718.0,524.9L716.0,525.1L714.4,521.7L711.1,521.2L707.0,518.2L702.9,515.9L699.2,515.7L696.8,517.9L694.2,516.9L693.0,514.3L691.5,514.0L690.4,517.7L692.5,521.1L690.2,523.4L688.2,523.3L688.7,520.2L687.7,518.6L680.1,520.6L678.0,517.8L676.4,517.6L674.6,519.9L676.6,524.9L674.5,527.5L670.3,525.9L668.2,525.8L667.5,524.0L669.7,524.4L666.6,519.4L671.0,519.7L668.2,518.2L670.8,514.4L670.9,511.1L669.4,509.7L672.8,508.6L673.1,506.5L670.9,507.6L674.8,503.4L672.1,500.2L671.3,497.0L672.9,497.5L674.5,493.6L675.4,495.5L676.6,493.2L678.1,495.0L680.3,489.3L681.7,488.8L683.9,484.0L683.5,481.9L687.7,479.5L687.6,475.8L689.0,471.2L690.2,469.4L692.7,468.6L695.1,464.3L694.8,462.0L691.9,456.9L693.6,450.7L690.3,448.6L690.4,444.3L687.4,441.4L686.7,437.3L690.0,433.9L688.2,431.2L688.5,427.9L689.5,426.1L691.8,425.5L691.1,406.3L690.9,406.4L690.0,384.4L690.2,383.8L689.6,367.5L689.2,353.9L686.7,287.9Z"},{"id":"20","name":"Kansas","d":"M-23.5,353.6L21.5,359.0L39.8,361.0L86.0,365.8L134.1,370.1L162.8,372.5L211.9,376.2L258.3,379.3L283.8,380.7L307.2,381.8L309.9,385.3L312.2,386.0L312.2,388.4L314.6,388.2L315.4,390.2L319.9,391.2L321.4,389.0L325.6,389.9L324.9,391.4L326.0,393.2L328.0,393.9L327.1,396.2L325.6,396.2L326.0,398.2L328.2,397.4L327.9,400.1L326.1,400.4L323.8,399.0L322.8,403.1L320.1,404.0L318.7,406.2L319.0,408.5L315.9,409.7L315.9,412.3L318.5,414.7L318.6,416.3L321.4,418.1L323.4,421.6L325.9,421.7L326.7,422.9L325.1,424.2L325.9,428.6L329.0,431.6L328.4,433.1L331.1,434.0L331.9,435.7L334.4,436.4L336.0,435.6L336.8,437.4L340.4,437.7L339.4,439.9L338.5,464.4L338.0,471.0L336.5,509.4L336.2,512.3L334.5,555.3L334.1,560.6L333.5,576.1L287.6,574.0L251.5,572.2L220.4,570.3L180.3,567.5L142.1,564.6L94.7,560.4L75.8,558.7L47.5,555.7L20.2,553.1L-18.1,549.0L-46.5,545.8L-39.2,486.1L-38.4,478.6L-29.9,408.9L-28.8,398.3L-25.9,374.5Z"},{"id":"27","name":"Minnesota","d":"M252.7,-204.1L265.4,-203.2L306.2,-200.7L341.4,-198.9L342.6,-224.1L346.6,-221.8L350.9,-222.7L355.2,-219.6L356.4,-217.6L358.0,-206.1L359.1,-204.7L361.2,-190.5L360.2,-186.7L360.7,-183.6L362.7,-181.1L367.1,-178.4L370.8,-177.6L372.1,-178.6L378.8,-177.8L380.4,-174.5L389.8,-173.7L397.2,-172.3L398.3,-168.6L397.8,-165.9L398.7,-165.2L405.2,-165.1L406.0,-165.9L409.4,-165.7L413.0,-166.7L412.9,-169.4L418.1,-171.9L424.2,-172.7L425.5,-171.4L433.7,-171.3L444.8,-165.5L448.8,-165.7L448.9,-162.9L445.9,-162.6L445.3,-160.5L447.7,-158.8L454.1,-159.4L456.4,-156.3L455.4,-154.4L456.3,-151.7L459.9,-144.5L463.9,-146.0L462.7,-150.7L464.7,-153.2L467.1,-152.5L473.6,-153.3L476.1,-150.8L475.7,-147.2L478.3,-144.9L480.5,-145.4L481.9,-143.3L488.3,-142.8L489.0,-139.0L488.4,-137.3L491.5,-136.1L495.1,-136.8L494.6,-132.6L498.1,-134.2L500.2,-132.9L503.2,-134.2L508.5,-135.2L515.7,-141.5L518.4,-142.2L520.4,-144.0L524.3,-145.7L526.5,-145.0L526.5,-141.2L529.1,-140.3L528.2,-138.8L529.8,-136.1L532.3,-136.0L537.7,-137.6L538.7,-136.0L542.6,-136.8L546.6,-135.9L549.6,-136.6L557.1,-137.1L561.6,-135.6L563.1,-131.9L568.4,-129.0L570.7,-131.0L573.8,-131.6L575.9,-130.5L579.5,-130.9L581.2,-129.9L585.1,-131.2L580.9,-128.0L579.4,-129.1L578.8,-127.2L576.1,-126.3L572.1,-123.0L566.3,-121.0L564.1,-118.9L556.0,-116.4L548.5,-113.3L546.1,-112.9L539.6,-110.4L538.9,-109.6L530.9,-105.3L525.1,-100.8L513.8,-90.6L511.1,-86.8L502.3,-76.9L498.2,-72.9L494.1,-70.6L489.9,-65.7L488.1,-65.1L483.7,-60.5L482.1,-60.0L472.3,-52.6L470.8,-51.2L472.1,-48.4L474.3,-45.8L470.9,-48.7L468.7,-48.1L468.2,-46.5L465.6,-45.7L467.1,-44.7L465.3,-42.3L461.8,-43.2L461.2,-5.1L459.6,-4.5L458.6,-1.3L454.7,-1.7L453.1,1.3L450.8,0.5L449.5,2.6L445.4,3.8L442.1,6.4L438.7,14.5L435.1,17.2L433.8,23.5L433.9,26.4L437.3,27.7L439.0,27.2L441.2,29.0L441.0,30.8L444.7,35.6L444.5,38.3L442.0,40.9L442.1,42.5L439.3,45.2L439.5,50.2L438.8,52.0L439.7,57.1L437.0,60.2L438.8,62.2L438.4,65.8L439.3,68.1L438.1,70.4L438.5,74.5L436.5,78.9L437.3,81.0L439.9,82.5L444.9,87.4L444.7,88.8L447.0,89.7L448.4,92.2L456.7,92.8L458.7,93.8L460.3,98.1L462.5,100.2L470.8,103.2L474.4,105.4L476.7,107.6L476.7,110.6L478.0,111.4L478.8,116.1L481.6,118.6L486.0,120.9L486.5,122.5L492.5,127.6L499.0,129.2L501.5,132.3L506.4,139.8L507.9,144.0L506.6,150.2L506.9,154.2L508.6,156.2L507.9,158.7L509.2,161.6L475.0,161.4L437.4,160.8L417.9,160.5L380.5,159.4L350.3,158.2L297.8,155.8L264.4,154.0L268.5,86.7L269.0,81.1L269.8,64.4L271.4,37.8L270.0,34.1L264.3,30.5L261.4,30.1L259.3,26.9L258.1,22.8L254.3,17.1L255.2,14.6L259.5,11.4L263.2,9.4L265.4,6.1L267.8,3.6L268.9,-3.3L268.6,-9.2L269.7,-11.2L268.6,-21.8L268.8,-29.0L266.8,-30.6L264.0,-36.2L263.4,-39.0L263.1,-45.7L261.6,-49.0L261.4,-51.2L262.4,-54.9L261.9,-61.2L262.7,-62.1L264.1,-68.5L263.1,-68.0L261.6,-70.9L262.3,-80.4L261.9,-85.6L261.9,-92.0L262.6,-94.7L261.9,-100.5L262.8,-112.6L262.0,-112.8L261.3,-117.9L259.9,-123.1L258.7,-124.1L257.3,-129.9L257.1,-133.2L255.5,-135.2L255.2,-142.0L253.0,-147.8L253.0,-154.0L254.3,-156.8L253.4,-162.1L254.0,-165.0L254.3,-171.0L253.4,-174.4L254.8,-178.5L256.3,-179.8L257.0,-183.2L255.0,-187.8L254.2,-194.9L253.4,-196.3L252.1,-201.9Z"},{"id":"40","name":"Oklahoma","d":"M-95.2,539.1L-83.9,540.6L-79.9,541.4L-46.5,545.8L-18.1,549.0L20.2,553.1L47.5,555.7L75.8,558.7L94.7,560.4L142.1,564.6L180.3,567.5L220.4,570.3L251.5,572.2L287.6,574.0L333.5,576.1L332.2,608.2L333.0,615.5L333.9,626.9L334.7,634L336.6,653.7L337.1,658.2L339.1,679.7L338.1,697.4L337.0,711.8L336.3,724.8L335.6,734.2L334.3,757.2L332.0,792.8L330.2,794.1L326.7,789.9L323.6,790.5L323.4,789.2L320.2,789.1L316.9,784.6L313.9,785.4L311.6,785.0L307.8,780.5L306.6,777.2L302.4,777L298.2,772.0L293.0,770.3L291.5,774.0L289.3,775.6L286.8,775.9L280.3,775.4L280.3,774.5L276.3,774.7L275.1,771.3L273.2,771.0L268.4,773.7L264.6,773.3L264.7,775.8L262.2,775.2L260.4,776.8L255.0,773.1L254.7,774.8L248.8,776.0L246.0,775.2L246.1,776.3L243.5,775.7L241.7,780.6L238.9,781.2L235.3,779.9L233.7,784.3L231.4,784.4L231.3,783.1L228.3,778.6L224.2,778.7L222.9,775.4L220.7,775.5L217.8,773.7L220.3,770.6L215.5,769.4L213.7,774.1L210.2,774.4L209.6,772.0L207.1,771.0L205.9,772.8L204.2,771.3L203.4,766.0L202.5,765.3L199.7,766.6L198.6,765.7L198.9,769.8L195.6,772.7L193.2,771.5L195.2,774.0L192.6,775.0L192.9,778.6L190.7,780.2L188.6,779.3L186.7,773.9L188.7,772.4L188.6,768.7L187.0,767.0L185.0,768.0L184.4,770.3L182.0,769.0L180.3,769.3L177.9,772.7L174.1,772.1L173.2,770.4L173.7,766.9L171.5,765.7L168.3,767.0L166.3,765.5L167.0,763.2L163.5,760.7L161.8,760.7L159.3,763.7L153.3,768.4L151.0,768.7L148.1,766.6L146.3,766.3L147.4,762.8L146.4,762.8L148.0,759.5L146.8,758.3L144.2,758.9L140.6,758.0L139.1,752.9L140.8,751.0L140.2,748.2L136.8,750.6L133.1,749.0L130.2,748.8L126.7,747.0L124.4,749.0L123.6,751.4L119.7,752.5L115.5,746.8L111.6,745.2L109.2,747.1L105.2,746.5L102.8,744.9L100.4,744.5L97.2,742.9L93.8,740.0L90.6,741.2L89.0,740.3L86.7,740.7L86.4,739.5L82.9,739.4L82.7,731.6L79.5,728.2L80.4,727.0L77.4,726.5L74.3,723.0L73.0,728.0L70.7,728.0L66.8,725.0L63.6,724.6L62.2,727.2L56.5,725.8L52.4,721.1L46.1,712.5L42.2,713.2L54.6,588.9L31.9,586.6L-1.1,583.1L-28.7,579.9L-61.0,575.9L-99.7,571.0L-98.6,564.5Z"},{"id":"46","name":"South Dakota","d":"M-75.4,22.1L-74.6,22.0L-67.6,-25.8L-66.0,-38.3L-49.2,-36.0L-21.5,-32.2L25.2,-26.1L45.0,-23.8L85.6,-19.2L114.4,-16.1L145.3,-13.1L185.8,-9.3L205.0,-7.7L235.0,-5.5L268.9,-3.3L267.8,3.6L265.4,6.1L263.2,9.4L259.5,11.4L255.2,14.6L254.3,17.1L258.1,22.8L259.3,26.9L261.4,30.1L264.3,30.5L270.0,34.1L271.4,37.8L269.8,64.4L269.0,81.1L268.5,86.7L264.4,154.0L257.7,153.5L258.5,154.8L257.2,156.8L260.7,160.6L260.1,166.6L257.8,166.8L258.9,169.7L258.3,171.4L262.4,171.8L262.4,176.4L263.8,178.4L262.4,182.0L260.0,182.8L260.7,185.9L259.2,187.4L260.2,188.6L258.0,191.0L257.7,195.4L255.8,196.2L255.1,199.0L253.2,200.4L253.1,204.6L255.5,206.2L258.2,209.7L259.6,214.6L258.8,217.1L260.9,218.9L258.0,219.1L257.2,217.4L253.1,217.4L252.1,214.4L248.8,210.6L250.1,207.8L248.3,206.8L244.8,206.4L244.7,204.2L240.1,201.9L238.0,202.7L236.8,200.0L229.6,198.8L228.9,197.2L225.9,195.9L225.9,193.8L221.7,192.1L219.2,192.7L216.7,191.8L215.4,193.0L212.4,192.0L209.6,192.5L207.0,191.7L203.9,192.4L199.7,191.6L196.4,190.2L195.0,190.7L193.2,194.7L191.0,196.1L187.8,196.4L182.8,192.1L177.0,188.2L167.6,182.7L166.3,179.4L147.5,177.8L116.1,175.0L90.4,172.4L54.4,168.7L19.7,164.9L9.3,163.4L-20.5,159.7L-44.4,156.5L-93.5,149.7L-90.8,130.8L-90.9,130.3L-76.4,30.0Z"},{"id":"29","name":"Missouri","d":"M286.8,343.2L316.0,345.1L343.8,346.7L371.2,347.6L394.0,347.8L404.8,348.1L439.4,348.2L466.0,347.9L483.7,347.3L485.8,349.4L486.0,351.2L489.1,352.0L488.9,354.0L491.7,357.2L493.5,357.3L493.6,360.4L495.6,362.1L498.9,362.5L497.5,363.5L494.4,371.4L494.1,375.4L495.1,384.5L497.5,390.0L498.8,391.5L497.3,395.2L498.2,397.3L500.9,399.1L501.6,400.7L501.0,404.1L505.6,408.3L508.3,411.5L510.2,412.3L512.0,416.1L514.3,416.5L516.3,420.7L519.1,423.7L529.6,431.3L533.2,436.2L533.8,441.2L535.2,445.5L533.6,447.5L535.6,452.2L536.2,455.8L540.1,459.6L542.1,459.2L544.1,457.4L545.7,453.7L549.1,453.5L553.9,455.9L556.8,456.2L563.7,460.7L563.3,464.0L561.2,465.6L558.9,468.9L560.7,473.9L560.4,476.0L556.5,481.3L555.4,486.8L552.4,490.6L551.1,493.5L551.0,497.8L551.9,501.6L555.2,504.4L558.9,509.2L563.4,511.2L565.5,514.2L566.9,514.2L570.0,517.5L573.0,517.1L573.5,518.5L571.3,519.9L572.5,522.6L576.1,522.9L577.9,521.1L580.3,522.7L580.5,524.3L583.2,524.9L587.5,528.7L587.2,530.9L589.7,531.0L591.4,533.3L594.9,534.6L594.9,537.7L597.0,541.5L594.6,541.9L595.1,544.7L600.0,553.5L599.3,557L596.6,557.7L595.1,560.8L598.3,563.7L598.2,566.3L600.6,571.0L602.7,573.5L602.6,576.5L607.1,579.5L608.9,577.9L606.1,575.5L608.6,574.8L611.8,577.8L613.4,580.7L615.4,579.9L617.1,581.0L616.2,586.0L615.2,588.6L613.3,589.1L613.2,591.2L616.4,593.2L615.9,594.8L612.9,594.7L612.2,597.1L614.3,600.3L612.9,601.9L611.6,605.9L609.2,606.9L605.8,602.7L603.4,603.4L601.2,611.3L599.7,613.5L597.3,613.2L597.6,611.5L598.7,609.4L597.7,606.7L593.8,606.6L593.1,608.3L594.8,611.5L596.0,612.7L594.7,616.2L596.6,619.5L595.8,621.5L591.3,621.6L591.3,623.7L595.3,625.8L595.5,627.3L592.7,628.1L587.1,627.3L586.5,628.5L591.8,632.5L592.1,635.9L588.0,638.2L587.5,642.3L585.3,643.6L551.8,644.3L554.8,638.2L559.0,635.0L559.0,633.7L561.8,630.7L564.8,629.2L565.3,626.8L567.0,626.4L567.8,619.0L563.7,616.6L564.3,615.8L563.3,611.9L498.5,612.1L438.5,611.4L412.3,610.9L371.1,609.7L332.2,608.2L333.5,576.1L334.1,560.6L334.5,555.3L336.2,512.3L336.5,509.4L338.0,471.0L338.5,464.4L339.4,439.9L340.4,437.7L336.8,437.4L336.0,435.6L334.4,436.4L331.9,435.7L331.1,434.0L328.4,433.1L329.0,431.6L325.9,428.6L325.1,424.2L326.7,422.9L325.9,421.7L323.4,421.6L321.4,418.1L318.6,416.3L318.5,414.7L315.9,412.3L315.9,409.7L319.0,408.5L318.7,406.2L320.1,404.0L322.8,403.1L323.8,399.0L326.1,400.4L327.9,400.1L328.2,397.4L326.0,398.2L325.6,396.2L327.1,396.2L328.0,393.9L326.0,393.2L324.9,391.4L325.6,389.9L321.4,389.0L319.9,391.2L315.4,390.2L314.6,388.2L312.2,388.4L312.2,386.0L309.9,385.3L307.2,381.8L301.9,378.5L303.5,374.2L299.5,369.8L299.4,365.5L295.9,364.3L296.2,362.6L293.1,361.0L291.3,354.8L291.6,352.6L289.7,350.7L289.7,348.4L292.1,346.2L290.2,345.2L289.9,347.0L286.4,346.6Z"},{"id":"17","name":"Illinois","d":"M498.9,362.5L501.0,361.6L500.7,358.9L501.4,353.9L499.5,352.0L501.8,348.2L507.2,345.8L510.4,345.9L513.5,343.6L513.7,340.2L514.7,337.5L514.9,333.8L516.7,332.3L519.1,328.7L521.0,327.7L522.1,321.8L521.9,316.4L519.6,312.2L517.4,311.9L513.9,307.2L515.8,302.9L516.2,298.9L517.2,295.8L520.5,294.7L522.8,295.5L526.7,293.3L532.1,293.6L536.2,292.6L539.0,289.5L540.7,288.8L545.2,288.8L548.3,285.7L551.1,284.5L550.9,280.8L552.4,277.6L552.4,274.7L553.9,273.1L558.7,270.3L558.5,268.1L559.9,264.1L559.3,260.9L560.5,257.5L559.3,255.4L559.4,250.5L557.1,248.3L549.1,244.3L546.5,240.2L547.0,236.9L544.2,233.4L540.4,231.4L540.1,230.0L536.3,228.1L536.3,225.5L544.0,225.5L582.7,225.2L591.4,225.4L624.4,225.3L631.4,224.9L657.3,224.1L671.3,223.9L671.2,230.8L670.0,236.2L671.9,242.2L675.8,248.5L677.9,250.5L678.5,253.4L681.0,261.0L681.9,265.2L684.5,270.2L685.9,271.3L686.3,273.8L686.7,287.9L689.2,353.9L689.6,367.5L690.2,383.8L690.0,384.4L690.9,406.4L691.1,406.3L691.8,425.5L689.5,426.1L688.5,427.9L688.2,431.2L690.0,433.9L686.7,437.3L687.4,441.4L690.4,444.3L690.3,448.6L693.6,450.7L691.9,456.9L694.8,462.0L695.1,464.3L692.7,468.6L690.2,469.4L689.0,471.2L687.6,475.8L687.7,479.5L683.5,481.9L683.9,484.0L681.7,488.8L680.3,489.3L678.1,495.0L676.6,493.2L675.4,495.5L674.5,493.6L672.9,497.5L671.3,497.0L672.1,500.2L674.8,503.4L670.9,507.6L673.1,506.5L672.8,508.6L669.4,509.7L670.9,511.1L670.8,514.4L668.2,518.2L671.0,519.7L666.6,519.4L669.7,524.4L667.5,524.0L668.2,525.8L670.3,525.9L668.9,529.6L665.9,531.6L664.0,534.8L665.4,540.5L669.2,544.2L668.2,547.0L659.4,548.3L657.3,549.0L654.0,551.9L651.4,550.6L648.2,553.1L647.9,556.1L646.4,559.8L646.8,561.1L650.0,564.6L651.4,568.3L649.7,573.2L646.9,573.8L644.5,573.2L640.9,570.4L634.5,568.4L631.8,566.3L626.1,564.1L622.6,563.9L620.2,565.1L617.9,567.5L616.3,571.1L613.4,574.0L612.7,577.1L615.4,579.9L613.4,580.7L611.8,577.8L608.6,574.8L606.1,575.5L608.9,577.9L607.1,579.5L602.6,576.5L602.7,573.5L600.6,571.0L598.2,566.3L598.3,563.7L595.1,560.8L596.6,557.7L599.3,557L600.0,553.5L595.1,544.7L594.6,541.9L597.0,541.5L594.9,537.7L594.9,534.6L591.4,533.3L589.7,531.0L587.2,530.9L587.5,528.7L583.2,524.9L580.5,524.3L580.3,522.7L577.9,521.1L576.1,522.9L572.5,522.6L571.3,519.9L573.5,518.5L573.0,517.1L570.0,517.5L566.9,514.2L565.5,514.2L563.4,511.2L558.9,509.2L555.2,504.4L551.9,501.6L551.0,497.8L551.1,493.5L552.4,490.6L555.4,486.8L556.5,481.3L560.4,476.0L560.7,473.9L558.9,468.9L561.2,465.6L563.3,464.0L563.7,460.7L556.8,456.2L553.9,455.9L549.1,453.5L545.7,453.7L544.1,457.4L542.1,459.2L540.1,459.6L536.2,455.8L535.6,452.2L533.6,447.5L535.2,445.5L533.8,441.2L533.2,436.2L529.6,431.3L519.1,423.7L516.3,420.7L514.3,416.5L512.0,416.1L510.2,412.3L508.3,411.5L505.6,408.3L501.0,404.1L501.6,400.7L500.9,399.1L498.2,397.3L497.3,395.2L498.8,391.5L497.5,390.0L495.1,384.5L494.1,375.4L494.4,371.4L497.5,363.5Z"},{"id":"05","name":"Arkansas","d":"M332.2,608.2L371.1,609.7L412.3,610.9L438.5,611.4L498.5,612.1L563.3,611.9L564.3,615.8L563.7,616.6L567.8,619.0L567.0,626.4L565.3,626.8L564.8,629.2L561.8,630.7L559.0,633.7L559.0,635.0L554.8,638.2L551.8,644.3L585.3,643.6L586.0,645.7L589.5,648.4L589.5,650.9L585.0,649.7L583.3,652.4L587.1,654.3L585.1,656.2L583.0,656.3L581.4,659.2L578.2,660.4L576.5,659.3L573.7,661.6L574.9,665.3L576.6,666.3L578.8,665.0L579.4,667.0L574.5,669.4L574.8,672.4L576.5,672.9L575.9,675.1L571.7,672.1L570.1,672.6L569.2,675.8L570.9,678.1L568.8,682.3L567.3,677.4L563.0,681.2L562.4,683.7L564.7,684.0L565.1,681.6L567.9,683.6L566.2,686.2L566.3,688.7L563.3,689.2L564.0,691.8L566.9,692.2L568.0,693.8L565.8,696.2L568.6,699.4L566.8,700.8L564.5,699.6L562.8,701.1L561.1,706.6L556.4,706.0L555.9,708.7L559.1,711.7L559.1,714.2L555.7,716.7L549.9,719.1L549.1,715.9L547.0,715.8L546.6,717.4L548.2,719.8L547.2,721.2L548.4,725.2L545.7,726.2L544.8,724.4L545.1,721.2L543.2,722.7L543.6,724.7L542.3,725.4L543.4,727.6L547.2,727.7L547.6,729.4L545.0,732.2L542.9,731.2L543.1,728.5L541.2,729.7L541.2,733.2L543.5,736.6L543.7,738.1L541.2,740.9L542.4,745.5L537.6,748.7L537.6,752.2L535.7,752.2L536.3,749.2L532.7,749.2L531.7,750.7L533.2,753.2L531.9,754.9L528.3,755.7L527.5,759.7L524.4,757.3L522.7,758.9L525.4,761.3L529.2,761.2L529.6,762.6L527.1,764.2L524.1,762.3L521.8,764.1L523.5,766.9L525.6,766.8L526.2,768.1L524.7,771.5L520.0,771.8L521.4,774.3L519.3,775.2L518.3,772.8L515.2,774.1L514.7,775.7L518.9,777.6L515.4,781.9L516.8,784.9L519.9,786.4L517.9,788.3L516.4,787.3L511.8,787.4L511.6,790.7L513.5,792.1L516.0,791.3L517.5,794.1L515.2,795.1L512.1,793.9L510.8,791.9L507.5,792.8L507.1,794.4L511.9,797.2L512.3,799.0L506.9,801.3L509.4,804.8L506.7,809.2L510.2,808.3L510.0,805.5L512.7,807.0L511.9,810.0L508.6,810.6L508.1,811.6L510.0,813.0L513.3,812.2L515.2,808.1L516.2,809.9L511.7,814.9L511.7,818.4L514.0,822.2L514.6,819.9L516.6,819.2L517.0,820.5L514.4,823.3L514.8,827.5L514.2,828.8L511.5,829.2L509.4,828.4L508.4,830.6L512.9,834.0L510.3,837.3L467.7,836.8L437.8,836.2L407.2,835.2L390.5,834.8L354.5,833.6L355.7,799.8L355.5,799.2L355.5,799.2L352.5,797.9L351.3,799.0L350.4,797.3L348.1,796.3L345.9,798.8L341.9,797.1L341.2,798.7L339.7,797.7L338.7,799.1L336.8,798.6L337.2,796.6L335.5,796.9L333.4,795.4L333.5,792.4L332.0,792.8L334.3,757.2L335.6,734.2L336.3,724.8L337.0,711.8L338.1,697.4L339.1,679.7L337.1,658.2L336.6,653.7L334.7,634L333.9,626.9L333.0,615.5Z"},{"id":"19","name":"Iowa","d":"M264.4,154.0L297.8,155.8L350.3,158.2L380.5,159.4L417.9,160.5L437.4,160.8L475.0,161.4L509.2,161.6L508.4,164.5L510.0,167.2L509.9,171.3L514.4,173.6L516.6,177.8L513.6,181.2L512.5,184.0L511.0,185.4L511.2,191.3L512.5,196.2L512.5,200.0L514.5,201.4L516.7,210.7L522.3,214.3L530.3,216.3L533.2,217.4L536.3,223.4L536.3,225.5L536.3,228.1L540.1,230.0L540.4,231.4L544.2,233.4L547.0,236.9L546.5,240.2L549.1,244.3L557.1,248.3L559.4,250.5L559.3,255.4L560.5,257.5L559.3,260.9L559.9,264.1L558.5,268.1L558.7,270.3L553.9,273.1L552.4,274.7L552.4,277.6L550.9,280.8L551.1,284.5L548.3,285.7L545.2,288.8L540.7,288.8L539.0,289.5L536.2,292.6L532.1,293.6L526.7,293.3L522.8,295.5L520.5,294.7L517.2,295.8L516.2,298.9L515.8,302.9L513.9,307.2L517.4,311.9L519.6,312.2L521.9,316.4L522.1,321.8L521.0,327.7L519.1,328.7L516.7,332.3L514.9,333.8L514.7,337.5L513.7,340.2L513.5,343.6L510.4,345.9L507.2,345.8L501.8,348.2L499.5,352.0L501.4,353.9L500.7,358.9L501.0,361.6L498.9,362.5L495.6,362.1L493.6,360.4L493.5,357.3L491.7,357.2L488.9,354.0L489.1,352.0L486.0,351.2L485.8,349.4L483.7,347.3L466.0,347.9L439.4,348.2L404.8,348.1L394.0,347.8L371.2,347.6L343.8,346.7L316.0,345.1L286.8,343.2L287.6,341.6L286.0,338.5L283.8,337.5L281.3,334.1L281.8,332.1L284.1,330.3L283.7,325.7L285.6,323.0L284.4,321.4L285.0,317.8L283.5,316.6L283.8,314.3L282.6,312.6L283.6,311.1L283.0,305.9L285.1,305.1L281.0,303.6L281.8,301.6L281.2,298.0L283.5,295.9L280.2,294.2L281.5,292.7L281.6,286.3L278.2,285.5L278.8,281.3L277.2,281.2L276.8,283.2L274.3,281.5L275.0,278.4L273.2,276.2L274.5,274.1L273.3,271.7L275.2,270.9L274.3,267.8L275.8,266.8L276.4,264.3L274.5,262.9L274.4,260.8L272.2,257.3L273.2,256.7L274.0,253.1L271.2,252.6L271.5,251.0L269.0,250.2L269.9,249.4L267.4,247.9L267.8,243.3L264.2,240.0L263.9,237.3L265.7,236.0L263.6,230.2L261.8,228.5L262.1,224.3L263.8,222.0L263.2,219.5L260.9,218.9L258.8,217.1L259.6,214.6L258.2,209.7L255.5,206.2L253.1,204.6L253.2,200.4L255.1,199.0L255.8,196.2L257.7,195.4L258.0,191.0L260.2,188.6L259.2,187.4L260.7,185.9L260.0,182.8L262.4,182.0L263.8,178.4L262.4,176.4L262.4,171.8L258.3,171.4L258.9,169.7L257.8,166.8L260.1,166.6L260.7,160.6L257.2,156.8L258.5,154.8L257.7,153.5Z"},{"id":"21","name":"Kentucky","d":"M615.4,579.9L612.7,577.1L613.4,574.0L616.3,571.1L617.9,567.5L620.2,565.1L622.6,563.9L626.1,564.1L631.8,566.3L634.5,568.4L640.9,570.4L644.5,573.2L646.9,573.8L649.7,573.2L651.4,568.3L650.0,564.6L646.8,561.1L646.4,559.8L647.9,556.1L648.2,553.1L651.4,550.6L654.0,551.9L657.3,549.0L659.4,548.3L668.2,547.0L669.2,544.2L665.4,540.5L664.0,534.8L665.9,531.6L668.9,529.6L670.3,525.9L674.5,527.5L676.6,524.9L674.6,519.9L676.4,517.6L678.0,517.8L680.1,520.6L687.7,518.6L688.7,520.2L688.2,523.3L690.2,523.4L692.5,521.1L690.4,517.7L691.5,514.0L693.0,514.3L694.2,516.9L696.8,517.9L699.2,515.7L702.9,515.9L707.0,518.2L711.1,521.2L714.4,521.7L716.0,525.1L718.0,524.9L719.2,523.3L719.9,517.9L721.7,516.2L726.9,514.5L729.3,511.5L732.4,511.2L734.8,516.0L736.7,517.2L738.4,515.7L740.3,516.2L739.5,519.0L740.8,520.3L742.7,518.6L742.9,515.1L747.1,514.4L746.1,512.3L746.2,507.1L749.4,506.5L750.4,504.1L748.7,503.2L750.3,501.6L751.8,502.8L753.2,501.1L755.5,500.9L755.6,499.5L753.2,498.9L753.0,497.1L754.4,496.9L758.4,500.4L758.8,505.6L763.7,508.3L767.7,508.2L770.3,511.2L770.9,509.2L775.0,508.0L776.4,506.6L777.1,502.7L776.6,497.9L779.3,493.8L780.2,490.2L781.9,489.4L784.6,490.6L787.9,488.2L790.8,479.2L796.1,477.0L797.2,474.5L799.9,472.1L798.6,468.2L797.5,461.4L799.5,459.4L802.4,459.6L807.1,459.0L809.0,461.2L812.5,461.5L814.8,459.2L820.9,455.3L822.5,455.5L825.3,454.1L829.3,454.0L828.0,451.6L830.2,448.9L829.4,447.6L826.3,447.4L825.6,445.4L827.5,443.2L827.0,441.5L823.9,437.8L824.1,436.6L827.4,433.9L830.4,431.1L831.7,431.1L834.5,433.9L838.4,435.2L840.8,433.4L843.3,433.4L844.6,431.7L846.1,432.0L847.1,435.8L852.4,437.1L854.5,441.6L857.7,446.0L858.0,449.6L859.0,451.0L866.3,452.7L872.2,451.2L877.6,453.3L878.3,455.2L881.1,456.4L882.2,459.1L887.3,460.3L889.6,456.4L894.1,454.8L897.0,456.4L902.1,457.0L904.2,458.2L905.3,460.5L907.5,459.0L912.9,458.6L914.4,455.5L917.5,453.3L918.9,451.1L921.6,450.8L925.2,448.7L926.6,450.4L926.3,452.9L928.5,458.9L931.0,460.7L934.8,460.7L939.0,464.7L941.5,466.4L942.1,468.8L942.3,473.7L944.0,475.6L944.1,478.8L942.3,480.8L943.1,481.8L942.8,484.9L941.4,485.0L941.6,487.1L944.5,488.9L946.5,491.2L948.6,495.4L951.4,496.4L949.7,499.6L951.3,501.6L954.2,502.4L954.1,504.3L956.8,507.4L958.7,508.3L961.8,515.4L964.6,515.8L966.1,518.0L967.7,517.7L969.2,519.8L970.7,519.7L971.4,521.7L976.7,522.8L979.2,522.3L961.2,541.7L954.6,544.5L950.8,547.1L947.6,550.1L943.2,553.0L943.7,557.8L940.9,560.2L938.7,560.5L936.7,562.5L937.5,565.7L936.6,568.3L932.2,570.7L926.9,571.3L924.3,576.0L924.2,578.8L921.3,579.3L915.4,581.7L908.4,585.2L904.5,585.4L898.6,588.6L897.3,590.2L896.6,591.4L881.3,592.2L866.6,593.2L852.6,593.9L837.2,594.4L827.7,594.1L814.0,594.5L803.8,595.9L786.0,596.5L775.7,596.6L760.2,596.2L751.2,596.4L748.3,597.8L746.9,596.6L719.9,598.5L702.9,599.3L681.8,600.5L681.9,598.6L670.6,598.0L672.7,606.1L671.7,609.7L646.3,610.1L622.9,610.7L607.3,610.6L601.2,611.3L603.4,603.4L605.8,602.7L609.2,606.9L611.6,605.9L612.9,601.9L614.3,600.3L612.2,597.1L612.9,594.7L615.9,594.8L616.4,593.2L613.2,591.2L613.3,589.1L615.2,588.6L616.2,586.0L617.1,581.0ZM597.6,611.5L594.8,611.5L593.1,608.3L593.8,606.6L597.7,606.7L598.7,609.4Z"},{"id":"26","name":"Michigan","d":"M805.4,-0.9L806.6,-1.9L808.3,1.2L819.0,3.9L816.5,7.3L812.7,6.6L810.2,3.4ZM772.3,6.6L772.9,4.4L774.1,5.4ZM766.2,3.7L769.8,5.6L769.3,7.7L766.1,5.7ZM762.4,18.9L763.4,16.2L763.7,12.3L764.6,11.4L764.6,8.3L767.5,8.5L767.6,13.2L768.6,17.8L765.6,20.4ZM758.7,10.2L760.8,9.6L760.1,12.7L759.0,12.7ZM751.5,29.6L753.7,30.4L754.0,33.7ZM744.3,49.6L745.2,48.3L748.4,49.5L747.7,54.9L744.7,52.2ZM740.6,58.2L742.3,55.7L743.4,58.2ZM714.4,20.3L717.8,23.7L716.5,24.9L715.8,23.0L713.4,20.7ZM719.8,269.0L724.8,265.1L729.2,260.0L734.8,245.3L740.2,236.9L743.1,229.4L744.5,223.8L745.7,214.0L745.4,210.8L746.1,205.9L745.5,196.9L743.9,186.9L741.7,180.4L735.2,168.0L733.1,162.9L730.7,155.4L727.5,148.9L727.4,146.3L730.8,140.4L731.8,137.6L731.8,133.3L729.9,126.0L727.3,121.1L727.9,119.3L731.1,116.3L734.6,107.8L737.8,101.4L738.1,94.5L739.2,87.0L737.0,80.9L737.1,79.0L741.4,76.4L744.7,75.4L745.4,70.2L744.8,66.1L746.4,64.0L748.5,64.9L750.9,60.3L754.0,62.1L756.7,61.2L757.9,59.4L759.1,54.5L760.7,53.5L762.9,48.2L764.5,45.5L766.0,45.8L767.8,43.7L768.5,45.8L765.5,47.8L765.1,50.2L767.3,54.5L763.8,59.2L765.9,58.1L766.2,62.2L765.2,62.6L764.2,67.3L765.6,72.5L766.9,72.6L769.6,64.4L769.7,58.9L771.8,57.7L771.0,66.5L768.7,69.1L767.9,72.9L770.3,73.5L771.4,69.8L772.5,69.0L775.7,61.3L776.2,56.9L775.8,53.8L776.2,49.3L774.9,44.6L775.4,39.3L778.0,36.5L779.7,36.2L782.4,33.3L785.3,32.3L789.4,32.4L793.6,31.3L795.4,30.1L795.2,28.3L789.7,27.7L787.3,25.2L785.6,19.0L787.9,14.7L790.0,13.7L792.9,9.7L792.5,8.0L789.5,6.7L799.3,6.9L800.2,4.1L810.5,9.1L814.9,12.0L816.9,10.7L818.8,11.5L820.8,10.8L826.2,12.3L830.4,16.7L831.1,19.8L834.0,21.1L839.3,20.5L840.7,20.8L845.7,24.7L849.5,24.8L855.3,28.3L860.0,27.6L863.8,31.6L865.7,32.9L864.4,34.5L867.3,39.6L869.2,41.1L872.1,48.3L868.7,47.4L866.0,45.7L863.7,48.2L864.9,54.2L867.0,56.5L870.6,57.6L871.7,60.8L872.3,66.2L873.6,68.2L873.3,72.2L872.3,76.0L872.9,79.6L872.6,85.8L873.0,92.5L871.1,93.5L869.1,97.2L865.1,97.4L864.0,99.2L863.1,105.3L863.0,111.7L859.8,112.2L858.6,113.4L858.8,116.1L851.9,117.0L849.9,119.1L848.7,123.4L848.4,130.3L847.2,132.7L849.8,137.6L852.6,139.1L854.0,137.2L855.0,139.2L858.4,140.1L860.8,142.0L862.4,141.0L866.5,134.0L868.8,133.8L869.9,132.3L868.5,129.6L869.8,127.1L870.9,122.1L871.8,124.8L874.8,122.9L875.5,121.2L871.8,119.8L875.8,119.6L877.6,118.1L878.2,115.8L882.0,114.9L887.5,112.9L888.8,110.3L893.7,108.1L895.7,109.6L899.7,110.7L902.3,112.6L905.8,119.1L907.6,121.0L909.3,126.3L911.2,137.7L914.9,147.2L916.9,160.8L919.3,168.5L922.9,174.3L923.5,176.9L921.9,179.6L921.5,187.7L922.4,190.2L920.9,196.6L920.6,200.4L917.9,204.3L915.3,204.3L913.5,206.8L913.3,203.2L911.7,201.8L913.3,200.8L915.5,197.1L913.0,195.9L910.5,196.4L907.4,198.6L906.4,200.5L908.1,201.8L908.6,204.3L906.1,204.3L904.5,207.3L905.1,211.9L904.2,216.3L901.6,219.5L896.6,221.3L894.0,226.9L895.0,233.9L894.7,236.3L892.2,237.9L892.4,241.8L889.8,244.2L889.0,246.4L886.8,246.8L885.9,250.5L884.1,251.3L881.5,255.5L882.7,259.8L881.4,260.4L866.6,262.2L838.0,265.5L816.7,267.7L816.4,263.5L801.5,264.6L769.3,266.6L735.3,268.4ZM595.6,-122.4L598.8,-126.3L613.5,-134.5L614.6,-134.4L621.2,-140.0L625.9,-142.5L626.9,-141.9L631.2,-143.7L631.1,-142.1L629.2,-141.2L624.7,-136.6L624.7,-134.9L620.9,-131.7L613.0,-128.5L606.5,-124.7L606.9,-123.6L610.5,-123.7L601.3,-119.4L598.5,-119.5ZM545.4,-36.6L548.4,-38.8L550.3,-39.0L556.5,-41.8L562.6,-43.8L567.5,-48.1L570.5,-51.7L573.0,-53.3L578.3,-54.3L580.7,-53.4L585.3,-54.9L588.8,-54.8L597.0,-59.2L601.6,-64.5L605.1,-64.9L609.7,-66.2L611.2,-68.4L612.0,-71.3L615.9,-75.0L618.1,-76.0L622.7,-80.7L626.3,-82.0L629.5,-85.3L631.2,-88.3L634.3,-91.3L643.3,-96.3L652.1,-98.0L660.0,-97.9L663.7,-95.8L663.9,-93.3L662.2,-93.6L659.5,-92.1L656.5,-92.7L653.2,-92.1L654.1,-89.5L649.1,-86.1L644.6,-80.7L641.6,-79.5L640.9,-75.3L639.8,-75.8L638.8,-72.9L636.6,-71.3L635.9,-67.6L634.1,-64.8L632.6,-64.5L631.0,-55.3L632.0,-52.4L630.7,-50.4L632.4,-50.6L635.5,-55.6L635.9,-58.0L637.0,-57.3L641.5,-61.9L645.9,-64.5L644.0,-61.4L642.2,-60.0L639.9,-55.6L644.5,-60.4L648.7,-61.6L650.9,-60.9L656.8,-61.2L659.2,-59.6L660.5,-60.1L663.3,-58.2L664.6,-56.1L667.0,-56.8L670.6,-53.4L671.2,-50.0L674.0,-47.4L675.1,-44.8L677.4,-42.2L680.5,-41.4L680.4,-37.0L682.2,-35.5L686.4,-34.9L693.1,-35.7L697.0,-38.3L698.8,-37.9L701.2,-34.0L703.2,-32.6L706.2,-32.5L707.4,-35.1L710.0,-34.9L711.5,-32.8L712.0,-36.7L710.7,-39.6L713.2,-40.8L714.4,-39.1L713.6,-35.9L716.4,-34.6L720.4,-38.8L726.6,-42.6L735.7,-49.2L737.5,-48.1L747.1,-51.0L754.5,-50.5L760.1,-50.7L764.8,-51.4L774.4,-56.7L778.2,-57.6L783.0,-57.6L788.1,-58.7L784.9,-53.8L785.0,-46.2L785.5,-43.8L784.3,-42.6L785.9,-39.9L788.5,-39.6L789.9,-40.6L791.0,-39.2L793.3,-39.5L796.2,-38.2L801.4,-41.3L803.5,-41.2L805.5,-38.7L805.4,-36.8L809.3,-38.6L810.5,-38.3L811.8,-42.1L814.7,-43.6L818.5,-42.8L820.2,-43.5L821.3,-45.7L825.7,-45.8L826.6,-44.2L825.4,-38.5L827.0,-31.9L827.6,-26.6L823.0,-26.2L821.9,-22.5L824.4,-22.0L825.1,-23.2L827.5,-23.2L829.0,-21.2L832.1,-20.3L830.2,-18.0L834.4,-14.1L836.3,-14.2L839.7,-11.9L840.9,-14.2L843.3,-12.4L844.4,-13.9L841.4,-19.3L843.7,-18.6L850.3,-19.9L852.3,-19.2L854.9,-14.3L857.6,-12.8L856.3,-9.2L854.2,-7.9L849.6,-9.7L844.7,-8.4L839.5,-10.3L837.8,-9.5L833.5,-9.2L829.0,-10.2L819.5,-8.0L817.5,-6.3L811.2,-9.7L808.6,-12.2L806.6,-11.6L804.3,-13.2L802.9,-10.8L803.4,-8.0L801.1,-6.0L801.5,-3.5L803.1,-0.1L801.3,1.0L797.3,-1.0L796.7,-2.7L793.1,-4.5L792.2,-6.1L788.4,-9.4L782.1,-11.6L780.1,-11.0L774.6,-13.4L771.7,-13.0L769.5,-14.1L768.8,-13.0L765.7,-13.4L761.9,-9.0L759.4,-4.8L758.0,-4.2L752.8,-5.2L749.1,-4.2L747.9,-2.9L748.3,-1.0L744.5,-2.8L741.0,-3.6L737.2,-2.6L735.6,-3.1L731.9,-1.6L729.9,0.7L729.8,4.2L728.5,8.3L726.3,8.2L725.2,10.4L721.7,11.4L720.9,14.0L718.8,14.3L718.9,16.8L717.0,17.4L717.8,20.8L714.5,19.1L712.9,17.0L714.8,15.4L714.8,13.5L716.5,11.7L716.6,9.5L718.7,9.6L720.9,4.6L720.3,2.3L718.3,1.8L715.6,6.1L709.4,5.1L710.0,7.9L708.1,10.6L707.4,13.7L702.6,15.7L701.9,17.2L700.8,15.1L701.1,12.0L700.3,8.3L699.0,6.6L697.4,7.7L696.9,14.4L697.4,15.1L692.5,18.3L688.6,25.7L686.1,33.9L683.2,37.6L680.2,44.0L673.8,53.9L674.9,55.7L671.7,55.0L670.3,52.5L668.1,51.0L667.8,49.4L670.0,42.8L671.7,40.0L671.3,38.2L669.4,36.8L666.9,39.5L662.5,40.2L662.5,40.2L661.3,37.7L662.4,36.3L661.8,34.2L663.9,32.2L664.8,30.0L664.2,27.4L665.4,23.5L663.0,19.4L664.9,18.6L663.5,16.2L661.3,15.3L660.3,13.5L656.4,13.4L654.9,11.1L651.5,12.2L648.5,9.8L651.2,6.8L650.0,5.7L649.9,3.1L643.4,0.6L641.1,1.4L637.2,-1.0L635.3,-0.1L631.8,-1.1L631.5,-2.5L627.1,-2.3L626.7,-0.5L624.4,-0.4L623.7,-2.0L621.0,-2.9L619.1,-2.1L605.0,-9.7L558.6,-21.8L558.8,-23.3L554.2,-32.6L549.9,-33.5L548.3,-34.8L548.3,-34.8L546.4,-34.4Z"},{"id":"28","name":"Mississippi","d":"M659.2,1016.1L665.3,1016.6L662.5,1017.8L660.1,1017.4ZM644.5,1014.6L647.7,1013.8L653.8,1015.3L655.0,1016.1L650.2,1015.9ZM632.4,1016.8L635.4,1016.3L638.4,1014.5L637.7,1016.2L633.5,1017.8ZM622.7,1015.5L626.9,1015.5L628.5,1014.7L627.6,1017.2L625.6,1017.6L622.1,1016.2ZM510.3,837.3L512.9,834.0L508.4,830.6L509.4,828.4L511.5,829.2L514.2,828.8L514.8,827.5L514.4,823.3L517.0,820.5L516.6,819.2L514.6,819.9L514.0,822.2L511.7,818.4L511.7,814.9L516.2,809.9L515.2,808.1L513.3,812.2L510.0,813.0L508.1,811.6L508.6,810.6L511.9,810.0L512.7,807.0L510.0,805.5L510.2,808.3L506.7,809.2L509.4,804.8L506.9,801.3L512.3,799.0L511.9,797.2L507.1,794.4L507.5,792.8L510.8,791.9L512.1,793.9L515.2,795.1L517.5,794.1L516.0,791.3L513.5,792.1L511.6,790.7L511.8,787.4L516.4,787.3L517.9,788.3L519.9,786.4L516.8,784.9L515.4,781.9L518.9,777.6L514.7,775.7L515.2,774.1L518.3,772.8L519.3,775.2L521.4,774.3L520.0,771.8L524.7,771.5L526.2,768.1L525.6,766.8L523.5,766.9L521.8,764.1L524.1,762.3L527.1,764.2L529.6,762.6L529.2,761.2L525.4,761.3L522.7,758.9L524.4,757.3L527.5,759.7L528.3,755.7L531.9,754.9L533.2,753.2L531.7,750.7L532.7,749.2L536.3,749.2L535.7,752.2L537.6,752.2L537.6,748.7L542.4,745.5L541.2,740.9L543.7,738.1L543.5,736.6L541.2,733.2L541.2,729.7L543.1,728.5L542.9,731.2L545.0,732.2L547.6,729.4L547.2,727.7L543.4,727.6L542.3,725.4L543.6,724.7L543.2,722.7L545.1,721.2L544.8,724.4L545.7,726.2L548.4,725.2L547.2,721.2L548.2,719.8L546.6,717.4L547.0,715.8L549.1,715.9L549.9,719.1L555.7,716.7L559.1,714.2L559.1,711.7L555.9,708.7L599.2,708.3L628.8,707.6L667.1,706.5L669.7,711.2L672.8,713.0L671.1,733.1L668.6,768.9L667.7,777.8L663.2,840.1L662.6,851.9L659.6,891.4L658.2,907.2L661.4,950.2L663.3,973.7L664.4,993.6L665.4,1006.0L664.7,1007.8L663.2,1007.0L661.3,1009.3L657.6,1007.9L655.0,1008.8L654.0,1007.1L650.3,1006.9L646.7,1008.2L642.0,1005.6L641.7,1007.2L637.4,1005.2L633.0,1005.4L626.8,1007.1L621.2,1009.5L615.2,1011.5L615.9,1008.5L613.9,1006.8L611.1,1008.4L612.9,1009.3L613.2,1011.5L608.2,1014.8L606.6,1019.3L604.8,1018.8L602.2,1019.7L599.8,1019.7L597.1,1017.0L596.3,1013.3L596.2,1009.5L593.1,1005.2L593.1,1002.2L591.0,999.8L588.8,998.8L588.0,996.6L585.9,994.8L585.1,989.5L583.5,988.7L585.4,983.8L584.6,981.8L586.0,980.4L587.7,973.4L589.0,972.3L588.8,969.8L590.2,968.5L588.8,966.5L555.8,967.0L529.1,967.2L483.9,967.1L486.5,965.9L488.0,962.7L484.8,959.9L484.6,958.3L486.6,955.8L486.0,953.5L483.6,951.8L483.9,949.7L487.4,950.1L490.8,949.0L491.2,946.6L488.9,944.5L488.7,942.0L487.3,941.1L489.1,939.0L489.9,941.7L491.5,943.4L493.2,943.0L493.3,941.4L490.7,937.2L490.5,933.1L494.5,932.1L496.9,930.1L496.1,928.4L492.5,929.1L490.7,927.4L491.8,925.3L493.7,926.8L497.3,926.9L497.5,921.0L499.7,919.0L504.2,918.8L505.0,917.8L499.3,917.1L500.7,911.9L503.1,911.3L503.5,913.7L504.9,914.6L505.8,913.1L504.7,911.9L509.4,907.6L509.0,904.8L510.4,903.4L514.2,902.6L514.2,899.9L510.4,898.4L511.4,897.0L514.0,899.2L514.9,897.2L517.3,896.0L519.1,892.1L516.1,890.8L516.5,894.2L510.2,893.6L510.6,889.2L515.9,888.1L517.3,886.6L520.1,888.3L521.0,886.0L520.7,883.1L523.0,883.5L526.1,879.1L525.4,878.1L524.2,880.3L519.7,879.4L519.7,876.2L521.2,875.1L519.7,873.1L517.7,874.2L513.2,871.5L513.8,868.3L514.8,868.2L518.1,870.9L520.1,870.5L519.1,869.0L515.0,866.3L517.7,864.5L519.3,862.5L517.9,860.4L516.7,863.0L512.8,864.4L511.7,863.7L511.1,860.8L512.8,858.7L516.0,856.8L516.4,855.3L510.3,853.6L510.5,849.7L511.5,847.7L515.6,844.8L516.0,842.6L514.2,838.6L512.1,838.8L512.3,842.5L509.5,844.0L507.8,842.8L508.4,840.1Z"},{"id":"39","name":"Ohio","d":"M916.5,265.7L919.1,264.5L919.0,266.5ZM911.1,263.4L911.6,258.3L913.7,260.1L913.4,262.0L911.2,264.6ZM816.7,267.7L838.0,265.5L866.6,262.2L881.4,260.4L881.7,261.8L885.4,263.0L887.6,261.9L894.3,265.9L898.7,266.6L900.7,267.6L904.1,271.0L907.5,272.3L910.5,270.7L910.6,268.0L911.7,267.1L914.4,269.9L917.7,269.5L917.7,271.6L923.2,276.4L926.1,278.0L930.0,278.8L936.8,275.0L940.6,274.4L943.3,272.2L951.8,268.0L958.3,269.5L961.5,268.3L965.0,268.4L969.7,264.6L974.1,259.3L975.5,258.6L977.9,255.2L984.8,248.8L986.5,248.5L997.3,241.3L1002.4,239.8L1006.3,237.5L1016.9,232.4L1019.7,230.8L1029.6,316.4L1026.6,318.2L1024.2,318.4L1022.9,321.4L1025.1,323.6L1027.2,328.0L1027.0,332.0L1028.1,337.1L1027.6,340.8L1026.0,342.3L1025.5,345.7L1024.1,348.5L1024.5,351.7L1023.1,353.5L1023.8,360.2L1022.7,361.5L1023.4,364.3L1021.0,363.9L1022.1,367.2L1020.5,368.6L1020.8,371.7L1019.0,374.6L1021.3,377.1L1019.7,378.8L1019.5,383.4L1016.7,384.2L1011.9,389.7L1009.4,393.1L1008.3,395.9L1006.4,396.6L1004.8,399.7L1001.8,400.5L998.4,403.5L996.4,403.9L995.1,401.1L991.9,400.4L987.9,405.0L987.9,409.6L982.3,409.8L982.1,412.9L980.4,413.7L979.2,416.1L980.3,421.4L977.0,422.8L977.8,425.1L979.7,426.5L979.6,432.6L977.9,431.4L976.4,432.7L976.1,435.1L974.6,436.4L972.5,435.5L973.7,433.2L971.2,429.1L969.2,429.2L966.7,427.2L965.8,429.4L963.8,431.1L961.8,436.1L962.1,439.8L958.6,443.1L961.0,448.7L962.1,454.1L961.2,455.9L958.3,455.8L956.2,457.5L956.2,463.0L955.6,465.8L951.5,466.8L945.4,469.6L942.1,468.8L941.5,466.4L939.0,464.7L934.8,460.7L931.0,460.7L928.5,458.9L926.3,452.9L926.6,450.4L925.2,448.7L921.6,450.8L918.9,451.1L917.5,453.3L914.4,455.5L912.9,458.6L907.5,459.0L905.3,460.5L904.2,458.2L902.1,457.0L897.0,456.4L894.1,454.8L889.6,456.4L887.3,460.3L882.2,459.1L881.1,456.4L878.3,455.2L877.6,453.3L872.2,451.2L866.3,452.7L859.0,451.0L858.0,449.6L857.7,446.0L854.5,441.6L852.4,437.1L847.1,435.8L846.1,432.0L844.6,431.7L843.3,433.4L840.8,433.4L838.4,435.2L834.5,433.9L831.7,431.1L830.4,431.1L827.4,433.9L826.5,420.8L825.8,405.5L824.1,381.2L823.0,357.1L817.8,281.0Z"},{"id":"47","name":"Tennessee","d":"M585.3,643.6L587.5,642.3L588.0,638.2L592.1,635.9L591.8,632.5L586.5,628.5L587.1,627.3L592.7,628.1L595.5,627.3L595.3,625.8L591.3,623.7L591.3,621.6L595.8,621.5L596.6,619.5L594.7,616.2L596.0,612.7L594.8,611.5L597.6,611.5L597.3,613.2L599.7,613.5L601.2,611.3L607.3,610.6L622.9,610.7L646.3,610.1L671.7,609.7L672.7,606.1L670.6,598.0L681.9,598.6L681.8,600.5L702.9,599.3L719.9,598.5L746.9,596.6L748.3,597.8L751.2,596.4L760.2,596.2L775.7,596.6L786.0,596.5L803.8,595.9L814.0,594.5L827.7,594.1L837.2,594.4L852.6,593.9L866.6,593.2L881.3,592.2L896.6,591.4L897.3,590.2L903.4,589.9L917.8,588.7L918.8,588.9L947.8,586.3L959.0,585.1L986.9,582.5L987.3,581.1L1001.5,579.9L1000.2,581.6L998.9,585.0L1000.1,589.4L999.0,590.1L998.1,593.9L1000.4,597.7L997.2,598.1L995.6,596.9L993.6,597.8L990.1,601.1L985.0,612.7L982.6,614.5L979.8,614.8L978.8,612.1L975.2,611.8L973.7,613.8L971.4,613.7L968.4,615.2L965.8,617.4L963.5,622.8L958.6,626.7L955.7,625.8L956.3,621.9L954.2,619.8L948.4,624.3L945.2,630.0L942.2,628.3L940.5,630.1L941.4,633.5L937.1,640.3L932.5,639.7L928.7,641.6L927.4,643.9L924.4,644.4L923.9,646.4L921.1,649.3L919.2,649.1L918.4,650.6L914.4,652.7L912.6,655.6L897.6,657.2L895.0,660L892.0,660.6L890.7,663.4L888.4,664.4L885.4,668.1L886.4,670.4L884.8,672.0L886.0,675.0L882.1,678.8L876.8,679.4L876.2,678.1L872.2,681.0L871.6,696.3L837.0,698.8L811.3,700.8L804.0,701.1L792.4,701.5L762.3,702.9L755.3,703.3L737.7,704.1L707.4,704.6L695.4,705.1L667.0,705.7L667.1,706.5L628.8,707.6L599.2,708.3L555.9,708.7L556.4,706.0L561.1,706.6L562.8,701.1L564.5,699.6L566.8,700.8L568.6,699.4L565.8,696.2L568.0,693.8L566.9,692.2L564.0,691.8L563.3,689.2L566.3,688.7L566.2,686.2L567.9,683.6L565.1,681.6L564.7,684.0L562.4,683.7L563.0,681.2L567.3,677.4L568.8,682.3L570.9,678.1L569.2,675.8L570.1,672.6L571.7,672.1L575.9,675.1L576.5,672.9L574.8,672.4L574.5,669.4L579.4,667.0L578.8,665.0L576.6,666.3L574.9,665.3L573.7,661.6L576.5,659.3L578.2,660.4L581.4,659.2L583.0,656.3L585.1,656.2L587.1,654.3L583.3,652.4L585.0,649.7L589.5,650.9L589.5,648.4L586.0,645.7Z"},{"id":"55","name":"Wisconsin","d":"M703.1,37.9L703.9,33.4L709.0,34.1L705.5,41.4ZM684.4,48.6L686.4,47.7L686.8,51.2L684.5,50.0ZM543.0,-64.9L544.2,-69.5L546.1,-69.8L545.4,-65.6ZM540.5,-56.7L543.8,-58.5L541.6,-55.9ZM534.7,-59.8L535.5,-61.0L540.3,-62.7L541.1,-61.9L539.3,-59.2L535.5,-58.6ZM530.0,-54.2L530.4,-55.8L533.6,-58.1L533.8,-57.0ZM530.9,-62.3L533.1,-59.3L531.1,-59.2L529.8,-61.2ZM529.3,-66.2L534.9,-68.3L536.6,-65.2L538.8,-67.1L539.2,-64.7L536.6,-64.1L533.9,-61.4L532.2,-63.7L529.6,-64.8ZM528.5,-50.7L531.3,-51.7L536.3,-56.6L538.6,-54.8L533.8,-52.9L534.6,-51.0L531.9,-50.7L528.7,-48.7ZM520.1,-63.8L522.5,-64.7L522.3,-62.3ZM474.3,-45.8L477.4,-44.1L482.9,-44.7L490.7,-47.5L493.8,-49.0L496.6,-49.0L504.3,-52.9L508.3,-54.4L509.3,-55.8L512.0,-54.6L513.1,-56.4L517.1,-57.0L520.6,-60.9L522.8,-60.2L525.0,-62.2L526.6,-61.9L530.4,-57.4L528.2,-53.2L524.4,-48.8L525.8,-44.8L523.3,-42.8L521.5,-38.5L523.6,-37.6L530.3,-41.7L531.1,-44.7L537.8,-38.7L539.9,-37.5L541.4,-38.1L545.4,-36.6L546.4,-34.4L548.3,-34.8L548.3,-34.8L549.9,-33.5L554.2,-32.6L558.8,-23.3L558.6,-21.8L605.0,-9.7L619.1,-2.1L621.0,-2.9L623.7,-2.0L624.4,-0.4L626.7,-0.5L627.1,-2.3L631.5,-2.5L631.8,-1.1L635.3,-0.1L637.2,-1.0L641.1,1.4L643.4,0.6L649.9,3.1L650.0,5.7L651.2,6.8L648.5,9.8L651.5,12.2L654.9,11.1L656.4,13.4L660.3,13.5L661.3,15.3L663.5,16.2L664.9,18.6L663.0,19.4L665.4,23.5L664.2,27.4L664.8,30.0L663.9,32.2L661.8,34.2L662.4,36.3L661.3,37.7L662.5,40.2L662.5,40.2L666.9,39.5L669.4,36.8L671.3,38.2L671.7,40.0L670.0,42.8L667.8,49.4L668.1,51.0L670.3,52.5L671.7,55.0L674.9,55.7L673.4,59.0L673.4,63.4L667.3,64.4L663.9,66.7L664.5,69.3L662.8,72.6L661.4,73.5L659.7,78.2L657.8,80.6L656.9,86.4L657.4,87.8L655.4,90.6L658.7,92.8L660.7,92.4L661.8,89.4L665.9,85.7L667.6,85.5L669.9,81.9L669.8,79.9L674.7,72.3L678.9,70.2L680.7,70.5L682.4,68.5L685.0,70.2L683.9,67.7L685.6,62.2L689.8,56.0L690.7,50.4L692.7,50.6L696.1,48.7L696.1,45.4L698.7,41.9L702.3,42.0L702.2,46.8L699.6,47.2L699.6,55.1L697.7,57.4L696.4,57.2L695.7,60.2L693.5,63.2L694.5,65.5L692.4,67.8L693.1,69.2L690.3,71.2L688.3,74.7L687.1,79.6L684.6,85.6L683.2,87.1L681.8,90.6L678.9,105.6L680.6,110.7L680.4,114.7L678.5,117.0L674.8,119.7L674.4,123.2L673.2,125.3L671.1,134.3L671.6,138.9L673.1,141.6L672.9,147.2L669.7,153.9L668.8,161.5L665.6,167.5L664.4,176.2L665.9,180.4L665.1,182.5L666.6,187.1L665.5,190.3L668.0,193.7L668.2,198.4L669.3,201.8L672.2,205.0L671.7,210.0L670.0,215.9L671.3,223.9L657.3,224.1L631.4,224.9L624.4,225.3L591.4,225.4L582.7,225.2L544.0,225.5L536.3,225.5L536.3,223.4L533.2,217.4L530.3,216.3L522.3,214.3L516.7,210.7L514.5,201.4L512.5,200.0L512.5,196.2L511.2,191.3L511.0,185.4L512.5,184.0L513.6,181.2L516.6,177.8L514.4,173.6L509.9,171.3L510.0,167.2L508.4,164.5L509.2,161.6L507.9,158.7L508.6,156.2L506.9,154.2L506.6,150.2L507.9,144.0L506.4,139.8L501.5,132.3L499.0,129.2L492.5,127.6L486.5,122.5L486.0,120.9L481.6,118.6L478.8,116.1L478.0,111.4L476.7,110.6L476.7,107.6L474.4,105.4L470.8,103.2L462.5,100.2L460.3,98.1L458.7,93.8L456.7,92.8L448.4,92.2L447.0,89.7L444.7,88.8L444.9,87.4L439.9,82.5L437.3,81.0L436.5,78.9L438.5,74.5L438.1,70.4L439.3,68.1L438.4,65.8L438.8,62.2L437.0,60.2L439.7,57.1L438.8,52.0L439.5,50.2L439.3,45.2L442.1,42.5L442.0,40.9L444.5,38.3L444.7,35.6L441.0,30.8L441.2,29.0L439.0,27.2L437.3,27.7L433.9,26.4L433.8,23.5L435.1,17.2L438.7,14.5L442.1,6.4L445.4,3.8L449.5,2.6L450.8,0.5L453.1,1.3L454.7,-1.7L458.6,-1.3L459.6,-4.5L461.2,-5.1L461.8,-43.2L465.3,-42.3L467.1,-44.7L465.6,-45.7L468.2,-46.5L468.7,-48.1L470.9,-48.7Z"},{"id":"31","name":"Nebraska","d":"M-93.5,149.7L-44.4,156.5L-20.5,159.7L9.3,163.4L19.7,164.9L54.4,168.7L90.4,172.4L116.1,175.0L147.5,177.8L166.3,179.4L167.6,182.7L177.0,188.2L182.8,192.1L187.8,196.4L191.0,196.1L193.2,194.7L195.0,190.7L196.4,190.2L199.7,191.6L203.9,192.4L207.0,191.7L209.6,192.5L212.4,192.0L215.4,193.0L216.7,191.8L219.2,192.7L221.7,192.1L225.9,193.8L225.9,195.9L228.9,197.2L229.6,198.8L236.8,200.0L238.0,202.7L240.1,201.9L244.7,204.2L244.8,206.4L248.3,206.8L250.1,207.8L248.8,210.6L252.1,214.4L253.1,217.4L257.2,217.4L258.0,219.1L260.9,218.9L263.2,219.5L263.8,222.0L262.1,224.3L261.8,228.5L263.6,230.2L265.7,236.0L263.9,237.3L264.2,240.0L267.8,243.3L267.4,247.9L269.9,249.4L269.0,250.2L271.5,251.0L271.2,252.6L274.0,253.1L273.2,256.7L272.2,257.3L274.4,260.8L274.5,262.9L276.4,264.3L275.8,266.8L274.3,267.8L275.2,270.9L273.3,271.7L274.5,274.1L273.2,276.2L275.0,278.4L274.3,281.5L276.8,283.2L277.2,281.2L278.8,281.3L278.2,285.5L281.6,286.3L281.5,292.7L280.2,294.2L283.5,295.9L281.2,298.0L281.8,301.6L281.0,303.6L285.1,305.1L283.0,305.9L283.6,311.1L282.6,312.6L283.8,314.3L283.5,316.6L285.0,317.8L284.4,321.4L285.6,323.0L283.7,325.7L284.1,330.3L281.8,332.1L281.3,334.1L283.8,337.5L286.0,338.5L287.6,341.6L286.8,343.2L286.4,346.6L289.9,347.0L290.2,345.2L292.1,346.2L289.7,348.4L289.7,350.7L291.6,352.6L291.3,354.8L293.1,361.0L296.2,362.6L295.9,364.3L299.4,365.5L299.5,369.8L303.5,374.2L301.9,378.5L307.2,381.8L283.8,380.7L258.3,379.3L211.9,376.2L162.8,372.5L134.1,370.1L86.0,365.8L39.8,361.0L21.5,359.0L-23.5,353.6L-15.7,289.9L-39.9,286.8L-63.3,283.8L-111.9,277.1Z"}],"points":{"KILX":[601.1,376.5],"KLSX":[535.3,470.5],"KLOT":[659.6,281.5],"KPAH":[633.7,574],"KSGF":[396.5,563.1],"KDVN":[539.6,283.2],"KVWX":[684.7,495.8],"KEAX":[355.9,460.5],"KDMX":[388.7,273.6],"KIND":[752.7,399.6],"Belleville":[570.7,481.8]},"cases":[{"n":1,"name":"Joplin, MO","date":"2011-05-22","local":"May 22, 2011, 5:34 PM CDT","utc":"2011-05-22 22:34","rating":"EF5","out":1,"radar":"KSGF","raob":"KSGF","lat":37.06,"lon":-94.56,"env":"","src":"https://en.wikipedia.org/wiki/Joplin_tornado","xy":[336.7,572.4]},{"n":2,"name":"St. Louis / Lambert, MO","date":"2011-04-22","local":"Apr 22, 2011, 7:59 PM CDT","utc":"2011-04-23 00:59","rating":"EF4","out":1,"radar":"KLSX","raob":"KILX","lat":38.72,"lon":-90.45,"env":"Around sunset","src":"https://en.wikipedia.org/wiki/2011_St._Louis_tornado","xy":[547,469.1]},{"n":3,"name":"Harrisburg, IL","date":"2012-02-29","local":"Feb 29, 2012, 4:51 AM CST","utc":"2012-02-29 10:51","rating":"EF4","out":1,"radar":"KPAH","raob":"KILX","lat":37.71,"lon":-88.55,"env":"Pre-dawn, cool season","src":"https://weather.gov/pah/HarrisburgEF4TornadoFeb292012","xy":[644,532.5]},{"n":4,"name":"Washington, IL","date":"2013-11-17","local":"Nov 17, 2013, 10:59 AM CST","utc":"2013-11-17 16:59","rating":"EF4","out":1,"radar":"KILX","raob":"KILX","lat":40.61,"lon":-89.57,"env":"Late morning, cool season","src":"https://en.wikipedia.org/wiki/2013_Washington,_Illinois_tornado","xy":[589.2,347.2]},{"n":5,"name":"Rochelle–Fairdale, IL","date":"2015-04-09","local":"Apr 9, 2015, 6:39 PM CDT","utc":"2015-04-09 23:39","rating":"EF4","out":1,"radar":"KLOT","raob":"KDVN","lat":41.86,"lon":-89.28,"env":"","src":"https://en.wikipedia.org/wiki/2015_Rochelle%E2%80%93Fairdale_tornado","xy":[601.8,266.5]},{"n":6,"name":"Perryville, MO","date":"2017-02-28","local":"Feb 28, 2017, 7:51 PM CST","utc":"2017-03-01 01:51","rating":"EF4","out":1,"radar":"KPAH","raob":"KILX","lat":37.72,"lon":-89.92,"env":"After dark, cool season","src":"https://en.wikipedia.org/wiki/2017_Perryville_tornado","xy":[574.3,533.2]},{"n":7,"name":"Taylorville, IL","date":"2018-12-01","local":"Dec 1, 2018, about 5:01 PM CST","utc":"2018-12-01 23:01","rating":"EF3","out":1,"radar":"KILX","raob":"KILX","lat":39.55,"lon":-89.29,"env":"CAPE about 500 J/kg, strong 0–3 km shear, dewpoints mid-50s °F","src":"https://weather.gov/ilx/swop-120118","xy":[604.2,415.1]},{"n":8,"name":"Eldon–Jefferson City, MO","date":"2019-05-22","local":"May 22, 2019, 10:56 PM CDT","utc":"2019-05-23 03:56","rating":"EF3","out":1,"radar":"KLSX","raob":"KSGF","lat":38.35,"lon":-92.58,"env":"Night","src":"https://weather.gov/lsx/May2122SevereStorms","xy":[439.8,492.3]},{"n":9,"name":"Virginia–Pleasant Plains, IL","date":"2021-05-03","local":"May 3, 2021, 5:05 PM CDT","utc":"2021-05-03 22:05","rating":"Weak","out":1,"radar":"KILX","raob":"KILX","lat":39.91,"lon":-90.21,"env":"Deep shear crossed the front at more than 45°","src":"https://www.weather.gov/ilx/May3_2021_SevereWeather","xy":[558.4,392.6]},{"n":10,"name":"Edwardsville, IL","date":"2021-12-10","local":"Dec 10, 2021, 8:27 PM CST","utc":"2021-12-11 02:27","rating":"EF3","out":1,"radar":"KLSX","raob":"KILX","lat":38.79,"lon":-89.98,"env":"Night, cool season","src":"https://en.wikipedia.org/wiki/Edwardsville_Amazon_warehouse_collapse","xy":[570.5,464.4]},{"n":11,"name":"Ste. Marie–Robinson, IL","date":"2023-03-31","local":"Mar 31, 2023, 8:58 PM CDT","utc":"2023-04-01 01:58","rating":"EF3","out":1,"radar":"KVWX","raob":"KILX","lat":38.93,"lon":-88.05,"env":"After dark","src":"https://en.wikipedia.org/wiki/2023_Robinson%E2%80%93Sullivan_tornado","xy":[666.9,453.3]},{"n":12,"name":"Woodford–Marshall, IL","date":"2026-06-11","local":"Jun 11, 2026, about 5:08 PM CDT (verify)","utc":"2026-06-11 22:08","rating":"EF3","out":1,"radar":"KILX","raob":"KILX","lat":40.88,"lon":-89.35,"env":"SBCAPE above 5,000 J/kg, 0–6 km shear 46 kt, 0–1 km shear 25 kt, STP highest along an outflow boundary","src":"https://www.weather.gov/ilx/swop-061126","xy":[599.6,329.6]},{"n":13,"name":"St. Louis metro","date":"2012-04-28","local":"Apr 28, 2012, about 3:45 PM CDT","utc":"2012-04-28 20:45","rating":"Hail to 4.5 in.","out":0,"radar":"KLSX","raob":"KILX","lat":38.63,"lon":-90.2,"env":"Two waves of supercells, no tornadoes reported","src":"https://www.weather.gov/media/lsx/Events/04_28_2012.pdf","xy":[559.6,474.8]},{"n":14,"name":"Sherman, IL","date":"2020-04-08","local":"Apr 8, 2020, about 5:10 PM CDT","utc":"2020-04-08 22:10","rating":"Hail to 3 in.","out":0,"radar":"KILX","raob":"KILX","lat":39.89,"lon":-89.6,"env":"Supercells with a hook echo, no tornadoes reported","src":"https://www.weather.gov/ilx/swop-040820","xy":[588.5,393.5]},{"n":15,"name":"St. Charles–Madison counties","date":"2024-03-14","local":"Mar 14, 2024, afternoon (verify)","utc":"2024-03-14 21:00","rating":"Hail 3–3.75 in.","out":0,"radar":"KLSX","raob":"KILX","lat":38.79,"lon":-90.7,"env":"Afternoon supercells; the day's only tornadoes came from the morning line","src":"https://www.weather.gov/lsx/3_14_2024","xy":[534.4,464.7]},{"n":16,"name":"Ipava, IL","date":"2026-04-17","local":"Apr 17, 2026, 5:16 PM CDT","utc":"2026-04-17 22:16","rating":"Hail 2 in.","out":0,"radar":"KILX","raob":"KILX","lat":40.35,"lon":-90.32,"env":"SBCAPE about 2,700 J/kg, SRH 118 m²/s², 43 kt deep shear","src":"https://www.weather.gov/ilx/April_17_2026_Severe_Thunderstorms","xy":[552.7,364.3]},{"n":17,"name":"Williamsfield–Peoria, IL","date":"2019-05-27","local":"May 27, 2019, early afternoon (verify)","utc":"2019-05-27 19:00","rating":"Warned, no tornado seen","out":0,"radar":"KILX","raob":"KILX","lat":40.92,"lon":-90.02,"env":"Veered, weaker low-level winds south of the warm front","src":"https://www.quincyvagell.com/?p=3856","xy":[567,327.5]}],"pxPerDegLat":64.3};
+
+/* ---------- radar scope hero ---------- */
+(function(){
+  const svg = document.getElementById('scope'), NS='http://www.w3.org/2000/svg';
+  const el=(t,a={},p=svg)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e;};
+  GEO.states.forEach(s=>el('path',{d:s.d,class:'state'+(s.id==='17'?' il':'')}));
+  const [cx,cy]=GEO.points.KILX, pxMi=GEO.pxPerDegLat/69;
+  [100,200,300,400].forEach(m=>el('circle',{cx,cy,r:(m*pxMi).toFixed(1),class:'ring'}));
+  // sweep: thin wedges fading behind the leading edge
+  const g=el('g',{class:'sweep',style:`--cx:${cx}px;--cy:${cy}px`});
+  const R=520, slices=16, span=48;
+  for(let i=0;i<slices;i++){
+    const a0=(-span+i*span/slices-90)*Math.PI/180, a1=(-span+(i+1)*span/slices-90)*Math.PI/180;
+    el('path',{d:`M${cx},${cy} L${cx+R*Math.cos(a0)},${cy+R*Math.sin(a0)} A${R},${R} 0 0 1 ${cx+R*Math.cos(a1)},${cy+R*Math.sin(a1)} Z`,fill:'#7FD6B4','fill-opacity':(0.012+0.2*Math.pow((i+1)/slices,2.2)).toFixed(3)},g);
+  }
+  el('line',{x1:cx,y1:cy,x2:cx,y2:cy-R,stroke:'#9FF0CF','stroke-width':1.5,'stroke-opacity':.9},g);
+  // radar sites
+  ['KILX','KLSX','KLOT','KPAH','KSGF','KDVN','KVWX','KEAX','KDMX','KIND'].forEach(k=>{
+    const [x,y]=GEO.points[k];
+    el('rect',{x:x-4,y:y-4,width:8,height:8,fill:'#8FB0BE'});
+    const t=el('text',{x:x+8,y:y-8,class:'site-lbl'}); t.textContent=k;
+  });
+  const [hx,hy]=GEO.points.Belleville;
+  el('circle',{cx:hx,cy:hy,r:8,fill:'none',stroke:'#E7C76A','stroke-width':2});
+  const ht=el('text',{x:hx-12,y:hy+20,class:'home-lbl','text-anchor':'end'}); ht.textContent='Belleville';
+  // case pings, timed to the sweep's bearing from KILX
+  GEO.cases.forEach(c=>{
+    const [x,y]=c.xy; let b=Math.atan2(x-cx,-(y-cy))*180/Math.PI; if(b<0)b+=360;
+    const d=(b/360*6).toFixed(2);
+    const p=el('circle',{cx:x,cy:y,r:c.out?9:7.5,fill:c.out?'#E5544A':'#9DB3BC',stroke:'#11283A','stroke-width':1.5,class:'ping',style:`animation-delay:${d}s`});
+    const tt=el('title',{},p); tt.textContent=`${c.name}: ${c.rating}`;
+  });
+})();
+
+/* ---------- WHIRL calculator ---------- */
+(function(){
+  const $=id=>document.getElementById(id);
+  const fmt={srh:v=>v+' m²/s²',ebwd:v=>v+' kt',cape:v=>(+v).toLocaleString()+' J/kg',lcl:v=>(+v).toLocaleString()+' m',cin:v=>v+' J/kg'};
+  const clip=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function run(){
+    const srh=+$('srh').value, eb=+$('ebwd').value, cape=+$('cape').value, lcl=+$('lcl').value, cin=+$('cin').value;
+    for(const k in fmt) $('o-'+k).textContent=fmt[k]($(k).value);
+    const t={
+      'Helicity':srh/75,
+      'Deep shear':eb<25?0:clip(eb/40,0,1.5),
+      'Instability':clip(cape/1500,0,1.25),
+      'Cloud base':clip((2000-lcl)/1000,0,1),
+      'Cap':clip((250+cin)/150,0,1),
+      'Storm mode':+$('mode').value,
+      'Boundary':$('bnd').checked?1.2:1
+    };
+    const s=Object.values(t).reduce((a,b)=>a*b,1);
+    $('score').textContent=s.toFixed(1);
+    let v,a;
+    if(s<1){v='Low odds';a='Tornado chances are small. Find a stronger setup or chase structure only.';}
+    else if(s<3){v='Chaseable';a='Worth the drive if storms can stay discrete. Pin down the boundary before you leave.';}
+    else{v='High-end setup';a='Strong tornado potential. Leave early, target the discrete storms, and plan escape routes.';}
+    if(t['Helicity']<1 && s>=1) a+=' Watch low-level helicity: it is the weak link today.';
+    $('verdict').textContent=v; $('advice').textContent=a;
+    $('marker').style.left=`calc(${clip(s/5,0,1)*100}% - 2px)`;
+    const max={'Helicity':6,'Deep shear':1.5,'Instability':1.25,'Cloud base':1,'Cap':1,'Storm mode':1.25,'Boundary':1.2};
+    $('terms').innerHTML=Object.entries(t).map(([k,val])=>`<div class="term"><span>${k}</span><div class="track"><div class="fill" style="width:${clip(val/max[k],0,1)*100}%"></div></div><b>×${val.toFixed(2)}</b></div>`).join('');
+  }
+  document.querySelectorAll('#inputs input,#inputs select').forEach(i=>i.addEventListener('input',run));
+  run();
+})();
+
+/* ---------- case library ---------- */
+(function(){
+  const hasMap=!!window.L;
+  if(!hasMap){document.getElementById('map').innerHTML='<p style="padding:24px;color:var(--muted)">The map could not load. Check your connection; the table below still works.</p>';}
+  const map=hasMap?L.map('map',{scrollWheelZoom:false}).setView([39.3,-90.6],6):null;
+  if(hasMap) L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap contributors &copy; CARTO',maxZoom:12}).addTo(map);
+  const markers={};
+  if(hasMap) GEO.cases.forEach(c=>{
+    markers[c.n]=L.circleMarker([c.lat,c.lon],{radius:c.out?9:8,color:'#fff',weight:2,fillColor:c.out?'#B8322A':'#5F7680',fillOpacity:.95})
+      .bindPopup(`<b>${c.name}</b><br>${c.local}<br>${c.rating}<br><a href="${c.src}" target="_blank" rel="noopener">Source</a>`).addTo(map);
+  });
+  let filter='all', key='date', dir=1;
+  const tb=document.querySelector('#case-tbl tbody');
+  function draw(){
+    const rows=GEO.cases.filter(c=>filter==='all'||String(c.out)===filter).sort((a,b)=>(a[key]>b[key]?1:-1)*dir);
+    tb.innerHTML=rows.map(c=>`<tr class="case-row" tabindex="0" data-n="${c.n}">
+      <td><span class="dot" style="background:${c.out?'#B8322A':'#5F7680'}"></span>${c.name}</td>
+      <td>${c.local}<br><small style="color:var(--muted)">${c.utc} UTC</small></td>
+      <td>${c.out?c.rating+' tornado':c.rating}</td>
+      <td>${c.radar} / ${c.raob}</td>
+      <td class="env">${c.env||''} <a href="${c.src}" target="_blank" rel="noopener">Source</a></td></tr>`).join('');
+    if(hasMap) GEO.cases.forEach(c=>{const on=filter==='all'||String(c.out)===filter; on?markers[c.n].addTo(map):markers[c.n].remove();});
+  }
+  const focus=n=>{if(!hasMap)return;const c=GEO.cases.find(x=>x.n==n);map.flyTo([c.lat,c.lon],8,{duration:.8});markers[n].openPopup();document.getElementById('map').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'center'});};
+  tb.addEventListener('click',e=>{const r=e.target.closest('tr');if(r&&e.target.tagName!=='A')focus(r.dataset.n);});
+  tb.addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.closest('tr');if(r)focus(r.dataset.n);}});
+  document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('click',()=>{
+    filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.setAttribute('aria-pressed',x===b));draw();}));
+  document.querySelectorAll('.sortbtn').forEach(b=>b.addEventListener('click',()=>{dir=key===b.dataset.k?-dir:1;key=b.dataset.k;draw();}));
+  draw();
+})();
+
+/* ---------- research ranking ---------- */
+(function(){
+  const R=[
+    ['0–500 m SRH','Coffer: 159 vs 80 m²/s² in VORTEX2 composites; top SRH layer in the 2025 HRRR study',5,'Very strong'],
+    ['STP (0–500 m version)','Mean 3.3 vs 0.6; about 1 is the rough dividing line',5,'Very strong'],
+    ['Effective / 0–1 km SRH','Mean about 381 vs 131 m²/s²',4,'Strong'],
+    ['0–1 km bulk shear','Signal starts around 20–30 kt',4,'Strong'],
+    ['Discrete storm mode','86% of EF3+ tornadoes came from discrete or clustered supercells',4,'Strong'],
+    ['ML LCL height','Mean about 955 m vs 1,424 m',3,'Moderate'],
+    ['Deep-layer shear','About 57 vs 44 kt; better at "supercell or not" than "tornado or not"',3,'Moderate'],
+    ['1–3 km storm-relative wind','Faster in significant tornado storms in newer HRRR data',2,'Emerging'],
+    ['MLCAPE','Needed, but barely differs between tornadoes and busts',1,'Weak']
+  ];
+  document.getElementById('ranks').innerHTML=R.map(r=>`<li><b>${r[0]}</b><span class="what">${r[1]}</span><div><div class="strength" aria-hidden="true">${[1,2,3,4,5].map(i=>`<i class="${i<=r[2]?'on':''}"></i>`).join('')}</div><div class="strength-lbl">${r[3]} evidence</div></div></li>`).join('');
+})();
+</script>
+</body>
+</html>

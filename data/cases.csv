@@ -1,0 +1,18 @@
+n,event,local_time,utc,outcome,result,radar,sounding,lat,lon,known_environment,source
+1,"Joplin, MO","May 22, 2011, 5:34 PM CDT",2011-05-22 22:34,tornado,EF5,KSGF,KSGF,37.06,-94.56,,https://en.wikipedia.org/wiki/Joplin_tornado
+2,"St. Louis / Lambert, MO","Apr 22, 2011, 7:59 PM CDT",2011-04-23 00:59,tornado,EF4,KLSX,KILX,38.72,-90.45,Around sunset,https://en.wikipedia.org/wiki/2011_St._Louis_tornado
+3,"Harrisburg, IL","Feb 29, 2012, 4:51 AM CST",2012-02-29 10:51,tornado,EF4,KPAH,KILX,37.71,-88.55,"Pre-dawn, cool season",https://weather.gov/pah/HarrisburgEF4TornadoFeb292012
+4,"Washington, IL","Nov 17, 2013, 10:59 AM CST",2013-11-17 16:59,tornado,EF4,KILX,KILX,40.61,-89.57,"Late morning, cool season","https://en.wikipedia.org/wiki/2013_Washington,_Illinois_tornado"
+5,"Rochelle–Fairdale, IL","Apr 9, 2015, 6:39 PM CDT",2015-04-09 23:39,tornado,EF4,KLOT,KDVN,41.86,-89.28,,https://en.wikipedia.org/wiki/2015_Rochelle%E2%80%93Fairdale_tornado
+6,"Perryville, MO","Feb 28, 2017, 7:51 PM CST",2017-03-01 01:51,tornado,EF4,KPAH,KILX,37.72,-89.92,"After dark, cool season",https://en.wikipedia.org/wiki/2017_Perryville_tornado
+7,"Taylorville, IL","Dec 1, 2018, about 5:01 PM CST",2018-12-01 23:01,tornado,EF3,KILX,KILX,39.55,-89.29,"CAPE about 500 J/kg, strong 0–3 km shear, dewpoints mid-50s °F",https://weather.gov/ilx/swop-120118
+8,"Eldon–Jefferson City, MO","May 22, 2019, 10:56 PM CDT",2019-05-23 03:56,tornado,EF3,KLSX,KSGF,38.35,-92.58,Night,https://weather.gov/lsx/May2122SevereStorms
+9,"Virginia–Pleasant Plains, IL","May 3, 2021, 5:05 PM CDT",2021-05-03 22:05,tornado,Weak,KILX,KILX,39.91,-90.21,Deep shear crossed the front at more than 45°,https://www.weather.gov/ilx/May3_2021_SevereWeather
+10,"Edwardsville, IL","Dec 10, 2021, 8:27 PM CST",2021-12-11 02:27,tornado,EF3,KLSX,KILX,38.79,-89.98,"Night, cool season",https://en.wikipedia.org/wiki/Edwardsville_Amazon_warehouse_collapse
+11,"Ste. Marie–Robinson, IL","Mar 31, 2023, 8:58 PM CDT",2023-04-01 01:58,tornado,EF3,KVWX,KILX,38.93,-88.05,After dark,https://en.wikipedia.org/wiki/2023_Robinson%E2%80%93Sullivan_tornado
+12,"Woodford–Marshall, IL","Jun 11, 2026, about 5:08 PM CDT (verify)",2026-06-11 22:08,tornado,EF3,KILX,KILX,40.88,-89.35,"SBCAPE above 5,000 J/kg, 0–6 km shear 46 kt, 0–1 km shear 25 kt, STP highest along an outflow boundary",https://www.weather.gov/ilx/swop-061126
+13,St. Louis metro,"Apr 28, 2012, about 3:45 PM CDT",2012-04-28 20:45,bust,Hail to 4.5 in.,KLSX,KILX,38.63,-90.2,"Two waves of supercells, no tornadoes reported",https://www.weather.gov/media/lsx/Events/04_28_2012.pdf
+14,"Sherman, IL","Apr 8, 2020, about 5:10 PM CDT",2020-04-08 22:10,bust,Hail to 3 in.,KILX,KILX,39.89,-89.6,"Supercells with a hook echo, no tornadoes reported",https://www.weather.gov/ilx/swop-040820
+15,St. Charles–Madison counties,"Mar 14, 2024, afternoon (verify)",2024-03-14 21:00,bust,Hail 3–3.75 in.,KLSX,KILX,38.79,-90.7,Afternoon supercells; the day's only tornadoes came from the morning line,https://www.weather.gov/lsx/3_14_2024
+16,"Ipava, IL","Apr 17, 2026, 5:16 PM CDT",2026-04-17 22:16,bust,Hail 2 in.,KILX,KILX,40.35,-90.32,"SBCAPE about 2,700 J/kg, SRH 118 m²/s², 43 kt deep shear",https://www.weather.gov/ilx/April_17_2026_Severe_Thunderstorms
+17,"Williamsfield–Peoria, IL","May 27, 2019, early afternoon (verify)",2019-05-27 19:00,bust,"Warned, no tornado seen",KILX,KILX,40.92,-90.02,"Veered, weaker low-level winds south of the warm front",https://www.quincyvagell.com/?p=3856
