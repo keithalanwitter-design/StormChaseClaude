@@ -1,0 +1,698 @@
+<title>WHIRL Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: an app shell. Top bar with view tabs (bottom bar on phones); each view is one job: Home, Score, Chase log, Cases, Guide. */
+:root{
+  --bg:#E9ECE8; --paper:#F7F8F5; --field:#FFFFFF; --ink:#14222B; --muted:#56656B; --rule:#C5CCC8;
+  --teal:#0F5E6B; --teal-soft:#D4E4E4; --on-teal:#FFFFFF;
+  --scope:#11283A; --scope-line:#2E4B5E; --scope-ink:#DCE6EA; --scope-muted:#9DB3BC;
+  --tor:#B8322A; --bust:#5F7680; --pend:#9A8A55;
+  --good:#2E7D3B; --warn:#9A6A00; --bar-bg:rgba(233,236,232,.95);
+  --z1:#4FA35A; --z2:#E2C14A; --z3:#E0812F; --z4:#C2362E; --z5:#A33A9E;
+  --head:'Barlow Semi Condensed','Arial Narrow',sans-serif;
+  --body:'IBM Plex Sans',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101A20; --paper:#17242C; --field:#1E2E37; --ink:#E4EAEC; --muted:#9AAAB0; --rule:#2C3E48;
+  --teal:#5FB7C2; --teal-soft:#21414A; --on-teal:#0C1A1F; --tor:#E5645A; --bust:#8FA6AF; --pend:#C9B575;
+  --good:#6CC27A; --warn:#E2B54A; --bar-bg:rgba(16,26,32,.95); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101A20; --paper:#17242C; --field:#1E2E37; --ink:#E4EAEC; --muted:#9AAAB0; --rule:#2C3E48;
+  --teal:#5FB7C2; --teal-soft:#21414A; --on-teal:#0C1A1F; --tor:#E5645A; --bust:#8FA6AF; --pend:#C9B575;
+  --good:#6CC27A; --warn:#E2B54A; --bar-bg:rgba(16,26,32,.95); color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);font-variant-numeric:tabular-nums}
+a{color:var(--teal);text-underline-offset:3px}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+h1,h2,h3{font-family:var(--head);line-height:1.08;margin:0;text-wrap:balance}
+h2{font-size:clamp(30px,4vw,40px);font-weight:700}
+h3{font-size:21px;font-weight:600}
+p{margin:0 0 1em;max-width:68ch}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+
+/* bar + tabs */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--bar-bg);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule)}
+.bar .wrap{display:flex;align-items:center;gap:20px;height:58px}
+.brand{font-family:var(--head);font-weight:700;font-size:24px;display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none}
+.brand svg{width:26px;height:26px}
+.tabs{display:flex;gap:4px;margin-left:auto}
+.tabs button{font:600 15px var(--body);color:var(--muted);background:none;border:0;padding:8px 14px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:7px}
+.tabs button svg{width:18px;height:18px}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-current="page"]{background:var(--ink);color:var(--bg)}
+.sync{font-size:13px;color:var(--muted);white-space:nowrap}
+.sync i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:6px}
+.sync.live i{background:var(--good)}
+
+.view{padding-block:36px 72px}
+.view[hidden]{display:none!important}
+.head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.head p{color:var(--muted);margin:8px 0 0}
+.panel{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:7px;font:600 15px var(--body);text-decoration:none;border:1.5px solid var(--teal);cursor:pointer;background:none;color:var(--teal)}
+.btn.primary{background:var(--teal);color:var(--on-teal)}
+.btn.quiet{border-color:var(--rule);color:var(--ink)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+input[type=text],input[type=date],input[type=number],input[type=url],select,textarea{width:100%;padding:9px 10px;font:inherit;font-size:15px;color:var(--ink);background:var(--field);border:1px solid var(--rule);border-radius:7px}
+textarea{min-height:70px;resize:vertical}
+label.lbl{display:block;font-weight:600;font-size:14px;margin-bottom:5px}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.form .full{grid-column:1/-1}
+
+/* home */
+.hero{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:36px;align-items:center}
+.hero h1{font-size:clamp(38px,5vw,58px);font-weight:700;letter-spacing:-.015em;margin-bottom:18px}
+.lede{font-size:18px;color:var(--muted)}
+.stat{border-left:4px solid var(--tor);padding:2px 0 2px 16px;margin:24px 0}
+.stat b{display:block;font-family:var(--head);font-size:54px;line-height:1;font-weight:700}
+.stat span{color:var(--muted);font-size:15px}
+.scope{background:var(--scope);border-radius:14px;padding:10px;margin:0}
+.scope svg{display:block;width:100%;height:auto}
+.scope-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;color:var(--scope-muted);font-size:13px;padding:8px 8px 4px}
+.scope-foot i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.scope-pick{color:var(--scope-ink);min-height:24px;font-size:14px;padding:0 8px 6px}
+.scope-pick button{font:600 14px var(--body);color:#9FDCE4;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.state{fill:#163449;stroke:var(--scope-line);stroke-width:1}
+.state.il{fill:#1B3F57;stroke:#4D7389}
+.ring{fill:none;stroke:#2F5468;stroke-dasharray:3 5}
+.sweep{transform-origin:var(--cx) var(--cy);animation:spin 6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ping{animation:ping 6s linear infinite;transform-box:fill-box;transform-origin:center;cursor:pointer}
+@keyframes ping{0%{opacity:1;transform:scale(1.9)}12%{opacity:.9;transform:scale(1)}60%,100%{opacity:.5;transform:scale(1)}}
+.site-lbl{font:600 17px var(--body);fill:#8FB0BE}
+.home-lbl{font:600 18px var(--body);fill:#E7C76A}
+.status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin-top:36px}
+.status div{background:var(--paper);padding:18px 20px}
+.status b{display:block;font-family:var(--head);font-size:34px;line-height:1.05}
+.status span{color:var(--muted);font-size:14px}
+.links{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.links a{display:block;font-weight:600;text-decoration:none;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;height:100%}
+.links a:hover{border-color:var(--teal)}
+.links small{display:block;color:var(--muted);font-weight:400;font-size:14px}
+.radars{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.radars a{font-size:14px;font-weight:600;padding:5px 11px;border:1px solid var(--rule);border-radius:20px;text-decoration:none;background:var(--field)}
+
+/* score */
+.field{margin-bottom:16px}
+.field .lbl{display:flex;justify-content:space-between}
+.field output{font-weight:500;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--teal)}
+.check{display:flex;gap:10px;align-items:center;font-weight:600;font-size:15px}
+.check input{width:18px;height:18px;accent-color:var(--teal)}
+.archetypes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.archetypes button{font:500 14px var(--body);padding:6px 12px;border-radius:20px;border:1px solid var(--rule);background:var(--field);color:var(--ink);cursor:pointer}
+.archetypes button[aria-pressed=true]{border-color:var(--teal);background:var(--teal-soft)}
+.score{font-family:var(--head);font-size:92px;font-weight:700;line-height:.9}
+.verdict{font-size:20px;font-weight:600;margin:6px 0 4px}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin:16px 0 6px;position:relative}
+.scale span{height:12px}
+.scale span:nth-child(1){background:var(--z1);border-radius:6px 0 0 6px}.scale span:nth-child(2){background:var(--z2)}.scale span:nth-child(3){background:var(--z3)}.scale span:nth-child(4){background:var(--z4)}.scale span:nth-child(5){background:var(--z5);border-radius:0 6px 6px 0}
+.marker{position:absolute;top:-6px;width:4px;height:24px;background:var(--ink);border-radius:2px;transition:left .35s ease}
+.scale-lbl{display:flex;justify-content:space-between;color:var(--muted);font-size:13px}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:18px 0 6px}
+.chip{display:inline-flex;flex-direction:column;align-items:center;padding:6px 10px;border-radius:8px;background:var(--teal-soft);min-width:66px}
+.chip b{font-size:16px}
+.chip small{font-size:12px;color:var(--muted)}
+.chip.weak{background:color-mix(in srgb,var(--tor) 18%,transparent);outline:2px solid var(--tor)}
+.chain .x{color:var(--muted);font-weight:600}
+.callout{border-left:3px solid var(--teal);padding:4px 0 4px 12px;margin-top:14px;font-size:15px}
+.how{width:100%;border-collapse:collapse;font-size:14px}
+.how th{text-align:left;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:2px solid var(--rule)}
+.how td{padding:9px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+.how code{font-size:13px;background:var(--teal-soft);padding:1px 5px;border-radius:4px}
+.scroll{overflow-x:auto}
+
+/* log */
+.calib svg{display:block;width:100%;height:auto}
+.calib text{fill:var(--muted);font:13px var(--body)}
+.calib .axis{stroke:var(--rule)}
+.entries{display:grid;gap:12px}
+.entry{display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:16px;align-items:start;background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:14px 16px}
+.entry .sc{font-family:var(--head);font-size:34px;font-weight:700;line-height:1;text-align:center;border-radius:8px;padding:8px 0;color:#14222B}
+.entry h3{font-size:19px}
+.entry .meta{color:var(--muted);font-size:14px}
+.entry .acts{display:flex;flex-direction:column;gap:8px;align-items:end}
+.entry select{width:auto}
+.pill{display:inline-block;font-size:13px;font-weight:600;padding:2px 9px;border-radius:20px;border:1px solid currentColor}
+.pill.tornado{color:var(--tor)}.pill.bust{color:var(--bust)}.pill.pending{color:var(--pend)}
+.linkbtn{font:500 14px var(--body);background:none;border:0;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0}
+.empty{text-align:center;padding:40px 20px;border:1.5px dashed var(--rule);border-radius:10px;color:var(--muted)}
+.empty h3{color:var(--ink);margin-bottom:6px}
+.note{font-size:14px;color:var(--muted)}
+.banner{font-size:14px;padding:10px 14px;border-radius:8px;background:var(--teal-soft);margin-bottom:16px}
+
+/* cases */
+.casemap{background:var(--scope);border-radius:12px;padding:8px;display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:8px}
+.casemap svg{display:block;width:100%;height:auto}
+.cm-dot{cursor:pointer;stroke:#11283A;stroke-width:2}
+.cm-dot.sel{stroke:#fff;stroke-width:3}
+.cm-num{font:700 12px var(--body);fill:#fff;pointer-events:none}
+.cm-card{color:var(--scope-ink);padding:16px;font-size:15px;align-self:center}
+.cm-card h3{color:#fff;margin-bottom:6px}
+.cm-card a{color:#9FDCE4}
+.cm-card .cm-meta{color:var(--scope-muted);font-size:14px}
+.filters{display:flex;gap:8px;margin:16px 0 12px;flex-wrap:wrap;align-items:center}
+.filters button{font:600 14px var(--body);padding:7px 14px;border-radius:20px;border:1.5px solid var(--rule);background:var(--field);color:var(--ink);cursor:pointer}
+.filters button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.filters .spacer{flex:1}
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl th{text-align:left;font-weight:600;color:var(--muted);font-size:14px;padding:10px 12px;border-bottom:2px solid var(--rule)}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+.case-row{cursor:pointer}
+.case-row:hover td{background:var(--field)}
+.case-row td:first-child{font-weight:600}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+.tag{font-size:12px;font-weight:600;color:var(--teal);margin-left:6px}
+.sortbtn{background:none;border:0;font:inherit;color:inherit;cursor:pointer;padding:0}
+.sortbtn::after{content:" ↕";font-size:12px;opacity:.6}
+details.add{margin-top:18px}
+details.add summary{cursor:pointer;font-weight:600;color:var(--teal);padding:6px 0}
+
+/* guide */
+.go{color:var(--good);font-weight:600}.mid{color:var(--warn);font-weight:600}.no{color:var(--tor);font-weight:600}
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;gap:10px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:40px 1fr;gap:12px;background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:14px 16px}
+.steps li::before{content:counter(s);font-family:var(--head);font-size:28px;font-weight:700;color:var(--teal);line-height:1}
+.steps b{display:block}
+.steps span{color:var(--muted)}
+.steps li.commit{border:2px solid var(--teal);background:var(--teal-soft)}
+.ranks{list-style:none;margin:0;padding:0}
+.ranks li{display:grid;grid-template-columns:minmax(160px,1.2fr) minmax(0,2fr) 140px;gap:16px;align-items:center;padding:11px 0;border-bottom:1px solid var(--rule)}
+.ranks .what{color:var(--muted);font-size:14px}
+.strength{display:flex;gap:3px}
+.strength i{flex:1;height:10px;background:var(--teal-soft);border-radius:2px}
+.strength i.on{background:var(--teal)}
+.sec{margin-top:44px}
+.sec>h3{margin-bottom:14px;font-size:26px}
+ul.plain{margin:6px 0 0;padding-left:20px}
+ul.plain li{margin:5px 0}
+.sources{columns:2;padding-left:18px;font-size:14px}
+.sources li{margin:4px 0;break-inside:avoid}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:8px;font-weight:600;z-index:100;font-size:15px}
+
+@media (max-width:860px){
+  .hero,.grid2,.casemap{grid-template-columns:1fr}
+  .links{grid-template-columns:1fr 1fr}
+  .ranks li{grid-template-columns:1fr}
+  .sources{columns:1}
+  .sync{display:none}
+  .bar{backdrop-filter:none;background:var(--bg)}
+  .tabs{position:fixed;left:0;right:0;bottom:0;margin:0;justify-content:space-around;background:var(--bar-bg);border-top:1px solid var(--rule);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));backdrop-filter:blur(6px)}
+  .tabs button{flex-direction:column;gap:2px;font-size:12px;padding:6px 8px}
+  .tabs button[aria-current="page"]{background:var(--teal-soft);color:var(--ink)}
+  .view{padding-bottom:110px}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:640px){
+  .status{grid-template-columns:1fr}
+  .links{grid-template-columns:1fr}
+  .form{grid-template-columns:1fr}
+  .entry{grid-template-columns:62px minmax(0,1fr)}
+  .entry .acts{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between}
+  #case-tbl thead{display:none}
+  #case-tbl tr{display:block;padding:12px 4px;border-bottom:1px solid var(--rule)}
+  #case-tbl td{display:block;border:0;padding:2px 0}
+  #go-tbl{min-width:560px}
+  .score{font-size:76px}
+}
+@media (prefers-reduced-motion:reduce){.sweep,.ping{animation:none}.marker{transition:none}}
+</style>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#home" data-go="home" aria-label="WHIRL home">
+      <svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="11.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="13" cy="13" r="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2.5"/><path d="M13 13 L13 1.5 A11.5 11.5 0 0 1 22.5 6.5 Z" fill="currentColor" opacity=".8"/><circle cx="13" cy="13" r="2" fill="#B8322A"/></svg>
+      WHIRL
+    </a>
+    <nav class="tabs" aria-label="Views">
+      <button data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 12 12 3"/></svg>Home</button>
+      <button data-go="score"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/></svg>Score</button>
+      <button data-go="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>Chase log</button>
+      <button data-go="cases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-6-5.5-6-11a6 6 0 1 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2"/></svg>Cases</button>
+      <button data-go="guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h7v15H4zM13 5h7v15h-7z"/></svg>Guide</button>
+    </nav>
+    <span class="sync" id="sync"><i></i>Connecting</span>
+  </div>
+</header>
+
+<main>
+<!-- HOME -->
+<section class="view wrap" id="v-home" aria-label="Home">
+  <div class="hero">
+    <div>
+      <h1>Find the Midwest tornado before it finds the road.</h1>
+      <p class="lede">WHIRL is our own tornado-targeting score, chase log and case library for Illinois and the states around it. Score a setup, log how the day went, and watch the engine learn which numbers matter.</p>
+      <div class="stat"><b>172</b><span>confirmed Illinois tornadoes by late June 2026, a state record and at least twice any other state (<a href="https://www.nprillinois.org/illinois/2026-06-28/illinois-leads-the-nation-in-confirmed-tornadoes-after-hot-and-rainy-spring-season-most-of-them-in-central-illinois" target="_blank" rel="noopener">NPR Illinois</a>)</span></div>
+      <div class="btns"><button class="btn primary" data-go="score">Score a setup</button><button class="btn" data-go="log">Open the chase log</button></div>
+    </div>
+    <figure class="scope">
+      <svg id="scope" viewBox="0 0 960 700" role="img" aria-label="Midwest radar scope centered on Lincoln, Illinois, with tornado and bust cases"></svg>
+      <div class="scope-pick" id="scope-pick" aria-live="polite">Tap a dot to see the case.</div>
+      <figcaption class="scope-foot"><span><i style="background:#E5544A"></i>Tornado <i style="background:#9DB3BC;margin-left:12px"></i>Bust <i style="background:#E7C76A;margin-left:12px"></i>Belleville</span><span>Rings every 100 miles from KILX</span></figcaption>
+    </figure>
+  </div>
+  <div class="status" aria-live="polite">
+    <div><b id="st-log">0</b><span>chase days logged</span></div>
+    <div><b id="st-split">0 / 0</b><span>tornado days / busts with outcomes</span></div>
+    <div><b id="st-cut">Not yet</b><span id="st-cut-lbl">best WHIRL cutoff (needs 2 of each)</span></div>
+  </div>
+  <div class="sec">
+    <h3>Today's setup</h3>
+    <ul class="links">
+      <li><a href="https://www.spc.noaa.gov/products/outlook/day1otlk.html" target="_blank" rel="noopener">SPC Day 1 outlook<small>Risk areas and tornado odds for today.</small></a></li>
+      <li><a href="https://www.spc.noaa.gov/products/outlook/day2otlk.html" target="_blank" rel="noopener">SPC Day 2 outlook<small>The night-before read.</small></a></li>
+      <li><a href="https://www.spc.noaa.gov/exper/mesoanalysis/new/viewsector.php?sector=20" target="_blank" rel="noopener">Mesoanalysis, Midwest<small>Live SRH, STP, LCL and CIN for the calculator.</small></a></li>
+      <li><a href="https://www.spc.noaa.gov/products/md/" target="_blank" rel="noopener">Mesoscale discussions<small>Where SPC is watching next.</small></a></li>
+      <li><a href="https://www.spc.noaa.gov/products/watch/" target="_blank" rel="noopener">Active watches<small>Tornado and severe watches.</small></a></li>
+      <li><a href="https://www.spc.noaa.gov/climo/reports/today.html" target="_blank" rel="noopener">Today's storm reports<small>Ground truth as it comes in.</small></a></li>
+    </ul>
+    <div class="radars">
+      <a href="https://radar.weather.gov/station/kilx/standard" target="_blank" rel="noopener">KILX Lincoln</a>
+      <a href="https://radar.weather.gov/station/klsx/standard" target="_blank" rel="noopener">KLSX St. Louis</a>
+      <a href="https://radar.weather.gov/station/kpah/standard" target="_blank" rel="noopener">KPAH Paducah</a>
+      <a href="https://radar.weather.gov/station/klot/standard" target="_blank" rel="noopener">KLOT Chicago</a>
+      <a href="https://radar.weather.gov/station/kdvn/standard" target="_blank" rel="noopener">KDVN Quad Cities</a>
+      <a href="https://radar.weather.gov/station/kvwx/standard" target="_blank" rel="noopener">KVWX Evansville</a>
+      <a href="https://radar.weather.gov/station/ksgf/standard" target="_blank" rel="noopener">KSGF Springfield MO</a>
+    </div>
+  </div>
+</section>
+
+<!-- SCORE -->
+<section class="view wrap" id="v-score" aria-label="Score" hidden>
+  <div class="head"><div><h2>Score a setup</h2><p>Enter the environment from SPC mesoanalysis or a forecast sounding, or start from an example setup. Then save it to the chase log.</p></div></div>
+  <div class="grid2">
+    <div class="panel" id="inputs">
+      <div class="lbl" style="margin-bottom:8px">Start from an example setup</div>
+      <div class="archetypes" id="archetypes" role="group" aria-label="Example setups"></div>
+      <div class="field"><label class="lbl" for="srh">0–500 m SRH <output id="o-srh"></output></label><input type="range" id="srh" min="0" max="500" step="5" value="150"></div>
+      <div class="field"><label class="lbl" for="ebwd">Effective bulk shear <output id="o-ebwd"></output></label><input type="range" id="ebwd" min="0" max="80" step="1" value="45"></div>
+      <div class="field"><label class="lbl" for="cape">MLCAPE <output id="o-cape"></output></label><input type="range" id="cape" min="0" max="5000" step="50" value="1800"></div>
+      <div class="field"><label class="lbl" for="lcl">ML LCL height <output id="o-lcl"></output></label><input type="range" id="lcl" min="300" max="2500" step="25" value="900"></div>
+      <div class="field"><label class="lbl" for="cin">MLCIN <output id="o-cin"></output></label><input type="range" id="cin" min="-250" max="0" step="5" value="-25"></div>
+      <div class="field"><label class="lbl" for="mode">Expected storm mode</label>
+        <select id="mode"><option value="0.5">Likely a line (winds run along the boundary)</option><option value="1" selected>Mixed</option><option value="1.25">Likely discrete (winds cross the boundary)</option></select></div>
+      <label class="check"><input type="checkbox" id="bnd"> Active warm front or outflow boundary in the target</label>
+    </div>
+    <div class="panel" aria-live="polite">
+      <div class="score" id="score">0.0</div>
+      <div class="verdict" id="verdict"></div>
+      <div class="muted" id="advice"></div>
+      <div class="scale" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><div class="marker" id="marker"></div></div>
+      <div class="scale-lbl" aria-hidden="true"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5+</span></div>
+      <div class="chain" id="chain"></div>
+      <div class="callout" id="whatif"></div>
+      <form class="sec form" id="save-form" style="margin-top:24px;border-top:1px solid var(--rule);padding-top:18px">
+        <div class="full"><h3>Save to the chase log</h3></div>
+        <div><label class="lbl" for="f-date">Chase date</label><input type="date" id="f-date" required></div>
+        <div><label class="lbl" for="f-place">Target area</label><input type="text" id="f-place" placeholder="Springfield to Decatur" required></div>
+        <div><label class="lbl" for="f-out">Outcome</label><select id="f-out"><option value="pending">Not known yet</option><option value="tornado">Tornado</option><option value="bust">Bust (no tornado)</option></select></div>
+        <div><label class="lbl" for="f-notes">Notes</label><input type="text" id="f-notes" placeholder="Boundary near I-72, cap broke at 3 PM"></div>
+        <div class="full btns"><button class="btn primary" type="submit" id="save-btn">Save to chase log</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="sec">
+    <h3>How the score works</h3>
+    <p class="muted">WHIRL multiplies seven factors, so one weak ingredient drags the whole score down. Every weight lives in one place in the page code and in the research script, so changing a weight changes both.</p>
+    <div class="panel scroll"><table class="how" id="how"></table></div>
+  </div>
+</section>
+
+<!-- LOG -->
+<section class="view wrap" id="v-log" aria-label="Chase log" hidden>
+  <div class="head"><div><h2>Chase log</h2><p>Every scored setup lands here. Mark each day's outcome after the chase, and the chart shows whether WHIRL is separating tornado days from busts.</p></div><button class="btn primary" data-go="score">Score a new day</button></div>
+  <div class="banner" id="log-banner" hidden></div>
+  <div class="panel calib">
+    <h3 style="margin-bottom:4px">Is the score working?</h3>
+    <p class="note" id="calib-note"></p>
+    <svg id="calib" viewBox="0 0 720 170" role="img" aria-label="WHIRL scores of logged days by outcome"></svg>
+  </div>
+  <div class="filters" role="group" aria-label="Filter log">
+    <button type="button" data-lf="all" aria-pressed="true">All</button>
+    <button type="button" data-lf="tornado" aria-pressed="false">Tornado</button>
+    <button type="button" data-lf="bust" aria-pressed="false">Bust</button>
+    <button type="button" data-lf="pending" aria-pressed="false">Not known yet</button>
+  </div>
+  <div class="entries" id="entries"></div>
+</section>
+
+<!-- CASES -->
+<section class="view wrap" id="v-cases" aria-label="Cases" hidden>
+  <div class="head"><div><h2>Case library</h2><p>Researched Illinois and Missouri tornadoes and supercell busts, plus any case you add. Tap a dot or a row for details.</p></div></div>
+  <div class="casemap"><svg id="cmap" viewBox="300 190 520 440" role="img" aria-label="Map of cases across Illinois and Missouri"></svg><div class="cm-card" id="cm-card" aria-live="polite"><h3>Select a case</h3><p class="cm-meta">Red dots are tornadoes, grey dots are supercell busts.</p></div></div>
+  <div class="filters" role="group" aria-label="Filter cases">
+    <button type="button" data-f="all" aria-pressed="true">All</button>
+    <button type="button" data-f="1" aria-pressed="false">Tornadoes</button>
+    <button type="button" data-f="0" aria-pressed="false">Busts</button>
+    <span class="spacer"></span><span class="note" id="case-count"></span>
+  </div>
+  <div class="panel scroll" style="padding:8px 12px">
+    <table class="tbl" id="case-tbl">
+      <thead><tr><th scope="col"><button class="sortbtn" data-k="name">Event</button></th><th scope="col"><button class="sortbtn" data-k="date">When</button></th><th scope="col">Result</th><th scope="col">Radar / sounding</th><th scope="col">Known environment</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <details class="add" id="add-case">
+    <summary>Add a case</summary>
+    <form class="panel form" id="case-form" style="margin-top:10px">
+      <div><label class="lbl" for="c-name">Event</label><input type="text" id="c-name" placeholder="Taylorville, IL" required></div>
+      <div><label class="lbl" for="c-date">Date</label><input type="date" id="c-date" required></div>
+      <div><label class="lbl" for="c-out">Result</label><select id="c-out"><option value="1">Tornado</option><option value="0">Supercell bust</option></select></div>
+      <div><label class="lbl" for="c-rating">Rating or what happened</label><input type="text" id="c-rating" placeholder="EF2, or hail to 2 in."></div>
+      <div><label class="lbl" for="c-time">Local time</label><input type="text" id="c-time" placeholder="5:10 PM CDT"></div>
+      <div><label class="lbl" for="c-radar">Radar / sounding sites</label><input type="text" id="c-radar" placeholder="KILX / KILX"></div>
+      <div><label class="lbl" for="c-lat">Latitude</label><input type="number" id="c-lat" step="0.01" min="34" max="45" placeholder="39.55" required></div>
+      <div><label class="lbl" for="c-lon">Longitude</label><input type="number" id="c-lon" step="0.01" min="-97" max="-84" placeholder="-89.29" required></div>
+      <div class="full"><label class="lbl" for="c-env">Known environment</label><input type="text" id="c-env" placeholder="CAPE 800 J/kg, SRH 250, boundary nearby"></div>
+      <div class="full"><label class="lbl" for="c-src">Source link</label><input type="url" id="c-src" placeholder="https://www.weather.gov/..."></div>
+      <div class="full btns"><button class="btn primary" type="submit" id="case-btn">Add case</button></div>
+    </form>
+  </details>
+</section>
+
+<!-- GUIDE -->
+<section class="view wrap" id="v-guide" aria-label="Guide" hidden>
+  <div class="head"><div><h2>Field guide</h2><p>Go or no-go, timing, picking the storm, and what the research says matters most.</p></div></div>
+  <div class="panel scroll">
+    <table class="tbl" id="go-tbl">
+      <thead><tr><th scope="col">Check</th><th scope="col">Go</th><th scope="col">Marginal</th><th scope="col">Stay home</th></tr></thead>
+      <tbody>
+        <tr><td>SPC outlook</td><td class="go">Enhanced+ with 10%+ tornado</td><td class="mid">Slight with 5% tornado</td><td class="no">Marginal or general thunder</td></tr>
+        <tr><td>0–500 m SRH</td><td class="go">150+ m²/s²</td><td class="mid">75–150</td><td class="no">Under 75</td></tr>
+        <tr><td>STP or WHIRL</td><td class="go">2+</td><td class="mid">1–2</td><td class="no">Under 1</td></tr>
+        <tr><td>ML LCL</td><td class="go">Under 1,000 m</td><td class="mid">1,000–1,500 m</td><td class="no">Over 1,500 m</td></tr>
+        <tr><td>Surface dewpoints</td><td class="go">Mid-60s °F+</td><td class="mid">Low 60s °F</td><td class="no">Under 60 °F</td></tr>
+        <tr><td>Cap (MLCIN)</td><td class="go">Weak, eroding by mid-afternoon</td><td class="mid">Needs a strong trigger</td><td class="no">Strong all day</td></tr>
+        <tr><td>Expected mode</td><td class="go">Discrete or semi-discrete</td><td class="mid">Mixed</td><td class="no">Fast-forming line</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid2 sec">
+    <div class="panel"><h3>The window</h3><ul class="plain">
+      <li>Storms usually fire mid-to-late afternoon once the cap breaks.</li>
+      <li>Tornadoes peak about an hour before sunset (<a href="https://par.nsf.gov/servlets/purl/10291970" target="_blank" rel="noopener">Brown et al. 2021</a>).</li>
+      <li>After sunset the low-level jet can roughly double 0–1 km SRH within three hours (<a href="https://origin-east-www-spc.woc.noaa.gov/publications/mead/lljtors.pdf" target="_blank" rel="noopener">SPC</a>).</li>
+      <li>Half of our Illinois–Missouri cases hit between November and March.</li></ul></div>
+    <div class="panel"><h3>After morning storms</h3><ul class="plain">
+      <li>Leftover outflow boundaries are prime targets; about 70% of VORTEX tornadoes were tied to one (<a href="https://www.weather.gov/media/fgz/science/SupercellBoundaryInteractions.pdf" target="_blank" rel="noopener">NWS</a>).</li>
+      <li>Recovery needs moisture as much as sunshine: watch dewpoints climb back and winds turn south.</li>
+      <li>Models bring the air back too fast; trust surface observations (<a href="https://inside.nssl.noaa.gov/efp/?p=32" target="_blank" rel="noopener">NSSL</a>).</li></ul></div>
+  </div>
+  <div class="sec"><h3>Picking the storm</h3>
+    <ol class="steps">
+      <li><div><b>Is it surface-based?</b><span>It should sit in the warm sector with dewpoints in the mid-60s. If not, drop south to the warm side of the boundary.</span></div></li>
+      <li><div><b>Does it have clean inflow?</b><span>Favor the tail-end or most isolated storm. If not, switch to that storm.</span></div></li>
+      <li><div><b>Is it rotating?</b><span>Look for a tightening velocity couplet. If weak, stay ahead two or three scans and drop it if outflow surges.</span></div></li>
+      <li><div><b>Is it holding discrete?</b><span>No merging, no bowing. If it is congealing, move to the next isolated cell south.</span></div></li>
+      <li class="commit"><div><b>Commit 3–5 miles southeast of the updraft base</b><span>Keep two escape routes, south and east, and re-check every scan or two.</span></div></li>
+    </ol>
+  </div>
+  <div class="sec"><h3>What separates tornadoes from busts</h3><ul class="ranks" id="ranks"></ul></div>
+  <div class="sec"><h3>Sources</h3>
+    <ul class="sources">
+      <li><a href="https://origin-east-www-spc.woc.noaa.gov/publications/thompson/waf-env.pdf" target="_blank" rel="noopener">Thompson et al., SPC: convective modes and environments</a></li>
+      <li><a href="https://par.nsf.gov/biblio/10113870" target="_blank" rel="noopener">Coffer et al.: 0–500 m SRH and STP</a></li>
+      <li><a href="https://arxiv.org/html/2503.15466v2" target="_blank" rel="noopener">GridRad-Severe and HRRR supercell environments (2025)</a></li>
+      <li><a href="https://origin-east-www-spc.woc.noaa.gov/publications/smith/vrot-env.pdf" target="_blank" rel="noopener">Smith et al., SPC: Vrot and tornado intensity</a></li>
+      <li><a href="https://origin-west-www-spc.woc.noaa.gov/publications/dial/waf-mode.pdf" target="_blank" rel="noopener">Dial et al., SPC: storm mode along boundaries</a></li>
+      <li><a href="https://par.nsf.gov/biblio/10392883" target="_blank" rel="noopener">TORUS lidar near-ground wind study</a></li>
+      <li><a href="https://spc.noaa.gov/exper/archive/events" target="_blank" rel="noopener">SPC Severe Weather Events Archive</a></li>
+    </ul>
+    <p class="note">Built by Keith Witter and Brian Hart. Not an official forecast: always follow NWS warnings and keep an escape route.</p>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+const GEO = __GEO__;
+const FIT = __FIT__;
+
+/* ================= WHIRL ENGINE =================
+   One place for every factor. The research script (tools/whirl_pipeline.py)
+   uses the same formula. Change a weight here and the score, the chain,
+   the "how it works" table and the chase log all follow. */
+const clip=(v,a,b)=>Math.max(a,Math.min(b,v));
+const WHIRL={
+  version:'0.1',
+  tiers:[{min:0,name:'Low odds',advice:'Tornado chances are small. Find a stronger setup or chase structure only.'},
+         {min:1,name:'Chaseable',advice:'Worth the drive if storms can stay discrete. Pin down the boundary before you leave.'},
+         {min:3,name:'High-end setup',advice:'Strong tornado potential. Leave early, target discrete storms, and plan escape routes.'}],
+  factors:[
+    {key:'srh',label:'Helicity',input:'0–500 m SRH',formula:'SRH ÷ 75',why:'Strongest single tornado signal in the research.',f:i=>i.srh/75,ref:3},
+    {key:'ebwd',label:'Deep shear',input:'Effective bulk shear',formula:'Shear ÷ 40 kt, capped at 1.5; 0 under 25 kt',why:'Supercells need organized deep shear.',f:i=>i.ebwd<25?0:clip(i.ebwd/40,0,1.5),ref:1.5},
+    {key:'cape',label:'Instability',input:'MLCAPE',formula:'CAPE ÷ 1,500, capped at 1.25',why:'Needed, but capped so it cannot drive the score.',f:i=>clip(i.cape/1500,0,1.25),ref:1.25},
+    {key:'lcl',label:'Cloud base',input:'ML LCL',formula:'(2,000 − LCL) ÷ 1,000, from 0 to 1',why:'Low cloud bases favor tornadoes.',f:i=>clip((2000-i.lcl)/1000,0,1),ref:1},
+    {key:'cin',label:'Cap',input:'MLCIN',formula:'(250 + CIN) ÷ 150, from 0 to 1',why:'A strong cap keeps storms off the ground.',f:i=>clip((250+i.cin)/150,0,1),ref:1},
+    {key:'mode',label:'Storm mode',input:'Your call',formula:'Line 0.5, mixed 1.0, discrete 1.25',why:'Most EF3+ tornadoes come from discrete storms.',f:i=>i.mode,ref:1.25},
+    {key:'bnd',label:'Boundary',input:'Your call',formula:'None 1.0, active boundary 1.2',why:'Boundaries add low-level spin.',f:i=>i.bnd?1.2:1,ref:1.2}
+  ],
+  score(i){const parts=this.factors.map(x=>({...x,v:x.f(i)}));return {parts,total:parts.reduce((a,p)=>a*p.v,1)};},
+  tier(s){return [...this.tiers].reverse().find(t=>s>=t.min);}
+};
+const ARCHETYPES=[
+  {name:'Spring discrete day',i:{srh:200,ebwd:50,cape:2200,lcl:800,cin:-20,mode:1.25,bnd:true}},
+  {name:'Cool-season, low CAPE',i:{srh:250,ebwd:60,cape:500,lcl:600,cin:-10,mode:1,bnd:false}},
+  {name:'Big CAPE hail day',i:{srh:50,ebwd:45,cape:3500,lcl:1300,cin:-40,mode:1,bnd:false}},
+  {name:'Evening squall line',i:{srh:180,ebwd:50,cape:1200,lcl:900,cin:-60,mode:0.5,bnd:false}}
+];
+const tierColor=s=>s<1?'var(--z1)':s<2?'var(--z2)':s<3?'var(--z3)':s<4?'var(--z4)':'var(--z5)';
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id);
+function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2600);}
+function project(lon,lat){const x=lon+91,y=lat-39,f=[1,x,y,x*y,x*x,y*y];return [f.reduce((s,v,k)=>s+v*FIT.cx[k],0),f.reduce((s,v,k)=>s+v*FIT.cy[k],0)];}
+
+/* ================= STORAGE =================
+   Shared store when the page runs as a Claude artifact (Keith and Brian see
+   the same log). Elsewhere it keeps entries in this browser only. */
+const Store={mode:'local',db:null,user:null,me:null,log:[],cases:[],subs:[],
+  async init(){
+    try{
+      if(window.claude&&claude.use){
+        const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
+        if(db){this.db=db;this.user=user;this.me=user?await user.id():null;this.mode='shared';}
+      }
+    }catch(e){}
+    if(this.mode==='shared'){
+      this.db.collection('log').orderBy('date','desc').onSnapshot(s=>{this.log=s.docs.map(d=>({id:d.id,...d.data()}));this.emit();},()=>this.fallback());
+      this.db.collection('cases').onSnapshot(s=>{this.cases=s.docs.map(d=>({id:d.id,...d.data()}));this.emit();},()=>{});
+      $('sync').className='sync live';$('sync').lastChild.textContent='Shared with your team';
+    }else this.fallback();
+  },
+  fallback(){this.mode='local';this.db=null;
+    try{this.log=JSON.parse(localStorage.getItem('whirl-log')||'[]');this.cases=JSON.parse(localStorage.getItem('whirl-cases')||'[]');}catch(e){this.log=[];this.cases=[];}
+    $('sync').className='sync';$('sync').lastChild.textContent='Saved on this device';
+    const b=$('log-banner');b.hidden=false;b.textContent='This copy saves entries in this browser only. Open the shared WHIRL page in Claude to keep one log with your chase partner.';
+    this.emit();},
+  saveLocal(){try{localStorage.setItem('whirl-log',JSON.stringify(this.log));localStorage.setItem('whirl-cases',JSON.stringify(this.cases));}catch(e){}},
+  async add(col,data){
+    if(this.mode==='shared'){await this.db.collection(col).add({...data,by:this.me||null});}
+    else{this[col]=[{id:'l'+Date.now(),...data},...this[col]];this.saveLocal();this.emit();}
+  },
+  async patch(col,id,data){
+    if(this.mode==='shared'){await this.db.doc(col+'/'+id).update(data);}
+    else{this[col]=this[col].map(x=>x.id===id?{...x,...data}:x);this.saveLocal();this.emit();}
+  },
+  async remove(col,id){
+    if(this.mode==='shared'){await this.db.doc(col+'/'+id).delete();}
+    else{this[col]=this[col].filter(x=>x.id!==id);this.saveLocal();this.emit();}
+  },
+  listeners:[],on(f){this.listeners.push(f);},emit(){this.listeners.forEach(f=>f());}
+};
+async function names(ids){
+  ids=[...new Set(ids.filter(Boolean))];
+  if(!Store.user||!ids.length)return {};
+  try{return await Store.user.profiles(ids);}catch(e){return {};}
+}
+
+/* ================= NAVIGATION ================= */
+const VIEWS=['home','score','log','cases','guide'];
+function go(v,push=true){
+  if(!VIEWS.includes(v))v='home';
+  VIEWS.forEach(x=>$('v-'+x).hidden=x!==v);
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===v?'page':'false'));
+  if(push){try{history.replaceState(null,'','#'+v);}catch(e){}}
+  window.scrollTo(0,0);
+}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(t){e.preventDefault();go(t.dataset.go);}});
+
+/* ================= HOME: radar scope ================= */
+(function(){
+  const svg=$('scope'),NS='http://www.w3.org/2000/svg';
+  const el=(t,a={},p=svg)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e;};
+  GEO.states.forEach(s=>el('path',{d:s.d,class:'state'+(s.id==='17'?' il':'')}));
+  const [cx,cy]=GEO.points.KILX,pxMi=GEO.pxPerDegLat/69;
+  [100,200,300,400].forEach(m=>el('circle',{cx,cy,r:(m*pxMi).toFixed(1),class:'ring'}));
+  const g=el('g',{class:'sweep',style:`--cx:${cx}px;--cy:${cy}px`});
+  const R=520,n=16,span=48;
+  for(let i=0;i<n;i++){const a0=(-span+i*span/n-90)*Math.PI/180,a1=(-span+(i+1)*span/n-90)*Math.PI/180;
+    el('path',{d:`M${cx},${cy} L${cx+R*Math.cos(a0)},${cy+R*Math.sin(a0)} A${R},${R} 0 0 1 ${cx+R*Math.cos(a1)},${cy+R*Math.sin(a1)} Z`,fill:'#7FD6B4','fill-opacity':(0.012+0.2*Math.pow((i+1)/n,2.2)).toFixed(3)},g);}
+  el('line',{x1:cx,y1:cy,x2:cx,y2:cy-R,stroke:'#9FF0CF','stroke-width':1.5},g);
+  ['KILX','KLSX','KLOT','KPAH','KSGF','KDVN','KVWX','KEAX','KDMX','KIND'].forEach(k=>{const [x,y]=GEO.points[k];el('rect',{x:x-4,y:y-4,width:8,height:8,fill:'#8FB0BE'});const t=el('text',{x:x+8,y:y-8,class:'site-lbl'});t.textContent=k;});
+  const [hx,hy]=GEO.points.Belleville;el('circle',{cx:hx,cy:hy,r:8,fill:'none',stroke:'#E7C76A','stroke-width':2});
+  const ht=el('text',{x:hx-12,y:hy+20,class:'home-lbl','text-anchor':'end'});ht.textContent='Belleville';
+  const pick=$('scope-pick');
+  GEO.cases.forEach(c=>{const [x,y]=c.xy;let b=Math.atan2(x-cx,-(y-cy))*180/Math.PI;if(b<0)b+=360;
+    const p=el('circle',{cx:x,cy:y,r:c.out?10:8.5,fill:c.out?'#E5544A':'#9DB3BC',stroke:'#11283A','stroke-width':1.5,class:'ping',style:`animation-delay:${(b/360*6).toFixed(2)}s`,tabindex:0,role:'button','aria-label':c.name});
+    const show=()=>{pick.innerHTML=`<b>${esc(c.name)}</b>, ${esc(c.local)}: ${esc(c.out?c.rating+' tornado':c.rating)}. <button data-case="${c.n}">Open in Cases</button>`;};
+    p.addEventListener('click',show);p.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();show();}});});
+  pick.addEventListener('click',e=>{const b=e.target.closest('[data-case]');if(b){go('cases');window.showCase&&window.showCase(String(b.dataset.case));}});
+})();
+
+/* ================= SCORE ================= */
+const fmt={srh:v=>v+' m²/s²',ebwd:v=>v+' kt',cape:v=>(+v).toLocaleString()+' J/kg',lcl:v=>(+v).toLocaleString()+' m',cin:v=>v+' J/kg'};
+function readInputs(){return {srh:+$('srh').value,ebwd:+$('ebwd').value,cape:+$('cape').value,lcl:+$('lcl').value,cin:+$('cin').value,mode:+$('mode').value,bnd:$('bnd').checked};}
+function setInputs(i){['srh','ebwd','cape','lcl','cin'].forEach(k=>$(k).value=i[k]);$('mode').value=String(i.mode);$('bnd').checked=!!i.bnd;}
+function runScore(){
+  const i=readInputs();for(const k in fmt)$('o-'+k).textContent=fmt[k](i[k]);
+  const {parts,total}=WHIRL.score(i),t=WHIRL.tier(total);
+  $('score').textContent=total.toFixed(1);$('verdict').textContent=t.name;$('advice').textContent=t.advice;
+  $('marker').style.left=`calc(${clip(total/5,0,1)*100}% - 2px)`;
+  // weakest link = lowest factor relative to its reference ceiling (ignore the judgment factors)
+  const meas=parts.slice(0,5),weak=meas.reduce((a,p)=>p.v/p.ref<a.v/a.ref?p:a);
+  $('chain').innerHTML=parts.map((p,k)=>`${k?'<span class="x" aria-hidden="true">×</span>':''}<span class="chip${p===weak?' weak':''}"><b>${p.v.toFixed(2)}</b><small>${p.label}</small></span>`).join('')+`<span class="x">=</span><span class="chip" style="background:${tierColor(total)};color:#14222B"><b>${total.toFixed(2)}</b><small style="color:#14222B">WHIRL</small></span>`;
+  const nxt=WHIRL.tiers.find(x=>x.min>total);
+  let msg=`<b>Weakest link: ${weak.label.toLowerCase()}.</b> ${weak.why}`;
+  if(nxt&&parts[0].v>0){const need=Math.ceil(nxt.min/(total/parts[0].v)*75/5)*5;
+    msg+= need<=500?` Holding everything else, 0–500 m SRH of about ${need} m²/s² would lift this to ${nxt.name.toLowerCase()}.`:` Helicity alone can't lift this to ${nxt.name.toLowerCase()}; another ingredient has to improve.`;}
+  $('whatif').innerHTML=msg;
+  document.querySelectorAll('#archetypes button').forEach(b=>b.setAttribute('aria-pressed',JSON.stringify(ARCHETYPES[b.dataset.k].i)===JSON.stringify(i)));
+}
+$('archetypes').innerHTML=ARCHETYPES.map((a,k)=>`<button type="button" data-k="${k}" aria-pressed="false">${a.name}</button>`).join('');
+$('archetypes').addEventListener('click',e=>{const b=e.target.closest('button');if(b){setInputs(ARCHETYPES[b.dataset.k].i);runScore();}});
+document.querySelectorAll('#inputs input,#inputs select').forEach(x=>x.addEventListener('input',runScore));
+$('how').innerHTML='<thead><tr><th>Factor</th><th>Input</th><th>Formula</th><th>Why it is in the score</th></tr></thead><tbody>'+WHIRL.factors.map(f=>`<tr><td><b>${f.label}</b></td><td>${f.input}</td><td><code>${f.formula}</code></td><td>${f.why}</td></tr>`).join('')+`</tbody>`;
+(function(){const d=new Date(Date.now()-5*3600e3);$('f-date').value=d.toISOString().slice(0,10);})();
+$('save-form').addEventListener('submit',async e=>{
+  e.preventDefault();const btn=$('save-btn');btn.disabled=true;
+  const i=readInputs(),s=WHIRL.score(i).total;
+  try{await Store.add('log',{date:$('f-date').value,place:$('f-place').value.trim(),outcome:$('f-out').value,notes:$('f-notes').value.trim(),inputs:i,score:+s.toFixed(2),engine:WHIRL.version,created:new Date().toISOString()});
+    toast('Saved to the chase log');$('f-place').value='';$('f-notes').value='';}
+  catch(err){toast(err&&err.code==='invalid_argument'?'You can view this log but not add to it. Ask the owner for Contributor access.':'Could not save. Check your connection and try again.');}
+  btn.disabled=false;
+});
+runScore();
+
+/* ================= LOG ================= */
+let logFilter='all';
+document.querySelectorAll('[data-lf]').forEach(b=>b.addEventListener('click',()=>{logFilter=b.dataset.lf;document.querySelectorAll('[data-lf]').forEach(x=>x.setAttribute('aria-pressed',x===b));renderLog();}));
+function bestCut(rows){
+  const done=rows.filter(r=>r.outcome==='tornado'||r.outcome==='bust');
+  const t=done.filter(r=>r.outcome==='tornado'),b=done.filter(r=>r.outcome==='bust');
+  if(t.length<2||b.length<2)return {t,b,done,cut:null};
+  let best={cut:null,ok:-1};
+  [...new Set(done.map(r=>r.score))].sort((a,b)=>a-b).forEach(c=>{const ok=done.filter(r=>(r.score>=c)===(r.outcome==='tornado')).length;if(ok>best.ok)best={cut:c,ok};});
+  return {t,b,done,...best};
+}
+function renderCalib(rows){
+  const svg=$('calib'),{t,b,done,cut,ok}=bestCut(rows);
+  const X=s=>100+clip(s,0,6)/6*600, lanes=[['tornado','Tornado',40,'var(--tor)'],['bust','Bust',85,'var(--bust)'],['pending','Not known',130,'var(--pend)']];
+  let h='<line class="axis" x1="100" x2="700" y1="152" y2="152"/>';
+  for(let s=0;s<=6;s++)h+=`<text x="${X(s)}" y="167" text-anchor="middle">${s}${s===6?'+':''}</text><line class="axis" x1="${X(s)}" x2="${X(s)}" y1="22" y2="152" stroke-dasharray="2 4"/>`;
+  lanes.forEach(([k,lbl,y,c])=>{h+=`<text x="0" y="${y+4}">${lbl}</text>`;
+    rows.filter(r=>r.outcome===k).forEach((r,j)=>{h+=`<circle cx="${X(r.score)}" cy="${y+((j%3)-1)*7}" r="7" fill="${c}" fill-opacity=".85"><title>${esc(r.date)} ${esc(r.place)}: ${r.score}</title></circle>`;});});
+  if(cut!=null)h+=`<line x1="${X(cut)}" x2="${X(cut)}" y1="18" y2="152" stroke="var(--ink)" stroke-width="2"/><text x="${X(cut)+6}" y="14" style="fill:var(--ink);font-weight:600">cutoff ${cut.toFixed(1)}</text>`;
+  svg.innerHTML=h;
+  const avg=a=>a.length?(a.reduce((s,r)=>s+r.score,0)/a.length).toFixed(1):'–';
+  $('calib-note').textContent=cut!=null
+    ?`Tornado days average ${avg(t)}, busts average ${avg(b)}. A cutoff of ${cut.toFixed(1)} sorts ${ok} of ${done.length} logged days correctly.`
+    :`Log at least two tornado days and two busts with outcomes to see where WHIRL draws the line. So far: ${t.length} tornado, ${b.length} bust.`;
+  $('st-cut').textContent=cut!=null?cut.toFixed(1):'Not yet';
+  $('st-cut-lbl').textContent=cut!=null?`best WHIRL cutoff, ${ok} of ${done.length} days sorted right`:'best WHIRL cutoff (needs 2 of each)';
+}
+async function renderLog(){
+  const rows=Store.log.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  $('st-log').textContent=rows.length;
+  const t=rows.filter(r=>r.outcome==='tornado').length,b=rows.filter(r=>r.outcome==='bust').length;
+  $('st-split').textContent=`${t} / ${b}`;
+  renderCalib(rows);
+  const shown=rows.filter(r=>logFilter==='all'||r.outcome===logFilter), box=$('entries');
+  if(!rows.length){box.innerHTML=`<div class="empty"><h3>No chase days yet</h3><p>Score a setup and save it. Each day you log, tornado or bust, teaches the score something.</p><button class="btn primary" data-go="score">Score your first day</button></div>`;return;}
+  if(!shown.length){box.innerHTML=`<div class="empty"><p>No days match this filter.</p></div>`;return;}
+  const ps=await names(shown.map(r=>r.by));
+  box.innerHTML=shown.map(r=>{const i=r.inputs||{};const who=r.by&&ps[r.by]?(ps[r.by].isMe?'you':(ps[r.by].name||'a teammate')):'';
+    return `<article class="entry" data-id="${esc(r.id)}">
+      <div class="sc" style="background:${tierColor(r.score)}">${(+r.score).toFixed(1)}</div>
+      <div><h3>${esc(r.place||'Untitled target')}</h3>
+        <div class="meta">${esc(r.date)}${who?' · logged by '+esc(who):''} · <span class="pill ${esc(r.outcome)}">${r.outcome==='pending'?'Not known yet':r.outcome==='tornado'?'Tornado':'Bust'}</span></div>
+        <div class="meta">SRH ${i.srh} · shear ${i.ebwd} kt · CAPE ${(+i.cape||0).toLocaleString()} · LCL ${(+i.lcl||0).toLocaleString()} m · CIN ${i.cin} · ${i.mode==1.25?'discrete':i.mode==0.5?'line':'mixed'}${i.bnd?' · boundary':''}</div>
+        ${r.notes?`<p style="margin:6px 0 0">${esc(r.notes)}</p>`:''}</div>
+      <div class="acts"><label class="small"><span class="muted">Outcome </span><select data-act="out" aria-label="Outcome for ${esc(r.place)}"><option value="pending"${r.outcome==='pending'?' selected':''}>Not known yet</option><option value="tornado"${r.outcome==='tornado'?' selected':''}>Tornado</option><option value="bust"${r.outcome==='bust'?' selected':''}>Bust</option></select></label>
+        <span><button class="linkbtn" data-act="load">Load in calculator</button> &nbsp; <button class="linkbtn" data-act="del">Delete</button></span></div>
+    </article>`;}).join('');
+}
+$('entries').addEventListener('change',async e=>{const s=e.target.closest('[data-act="out"]');if(!s)return;const id=e.target.closest('.entry').dataset.id;
+  try{await Store.patch('log',id,{outcome:s.value});toast('Outcome updated');}catch(err){toast('Could not update. You may only have view access.');}});
+$('entries').addEventListener('click',async e=>{const b=e.target.closest('[data-act]');if(!b)return;const card=b.closest('.entry'),id=card.dataset.id,r=Store.log.find(x=>x.id===id);
+  if(b.dataset.act==='load'&&r){setInputs(r.inputs);runScore();go('score');}
+  if(b.dataset.act==='del'){
+    if(b.dataset.confirm){try{await Store.remove('log',id);toast('Deleted');}catch(err){toast('Could not delete. You may only have view access.');}}
+    else{b.dataset.confirm='1';b.textContent='Tap again to delete';setTimeout(()=>{if(b.isConnected){delete b.dataset.confirm;b.textContent='Delete';}},4000);}}
+});
+
+/* ================= CASES ================= */
+(function(){
+  const NS='http://www.w3.org/2000/svg',svg=$('cmap');
+  const el=(t,a={},p=svg)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e;};
+  GEO.states.forEach(s=>el('path',{d:s.d,class:'state'+(s.id==='17'?' il':'')}));
+  const [hx,hy]=GEO.points.Belleville;el('circle',{cx:hx,cy:hy,r:7,fill:'none',stroke:'#E7C76A','stroke-width':2});
+  const layer=el('g');let dots={},filter='all',key='date',dir=1,all=[];
+  const card=$('cm-card'),tb=document.querySelector('#case-tbl tbody');
+  function merged(){
+    return [...GEO.cases.map(c=>({...c,n:String(c.n)})),
+      ...Store.cases.map((c,k)=>({n:'u'+c.id,name:c.name,date:c.date,local:[c.dateLabel||c.date,c.time].filter(Boolean).join(', '),utc:'',rating:c.rating||'',out:+c.out,radar:(c.radar||'').split('/')[0]?.trim()||'',raob:(c.radar||'').split('/')[1]?.trim()||'',lat:+c.lat,lon:+c.lon,env:c.env||'',src:c.src||'',added:true,id:c.id,xy:project(+c.lon,+c.lat)}))];
+  }
+  function show(n){const c=all.find(x=>x.n===n);if(!c)return;
+    Object.values(dots).forEach(d=>d.classList.remove('sel'));dots[n]&&dots[n].classList.add('sel');
+    card.innerHTML=`<h3>${esc(c.name)}</h3><p class="cm-meta">${esc(c.local)}${c.utc?'<br>'+esc(c.utc)+' UTC':''}</p><p><b>${esc(c.out?(c.rating?c.rating+' tornado':'Tornado'):c.rating||'Bust')}</b></p><p class="cm-meta">${c.radar?'Radar '+esc(c.radar)+(c.raob?', sounding '+esc(c.raob):''):''}${c.env?'<br>'+esc(c.env):''}</p>${/^https?:\/\//.test(c.src)?`<p><a href="${esc(c.src)}" target="_blank" rel="noopener">Read the source</a></p>`:''}${c.added?'<p class="cm-meta">Added by your team</p>':''}`;}
+  window.showCase=n=>{draw();show(n);};
+  function draw(){
+    all=merged();layer.innerHTML='';dots={};
+    all.forEach((c,k)=>{if(!(filter==='all'||String(c.out)===filter))return;const [x,y]=c.xy;const g=el('g',{},layer);
+      const d=el('circle',{cx:x,cy:y,r:9,fill:c.out?'#E5544A':'#9DB3BC',class:'cm-dot',tabindex:0,role:'button','aria-label':c.name},g);
+      const t=el('text',{x,y:y+4,'text-anchor':'middle',class:'cm-num'},g);t.textContent=c.added?'+':c.n;
+      d.addEventListener('click',()=>show(c.n));d.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();show(c.n);}});dots[c.n]=d;});
+    const rows=all.filter(c=>filter==='all'||String(c.out)===filter).sort((a,b)=>(a[key]>b[key]?1:-1)*dir);
+    $('case-count').textContent=`${all.filter(c=>c.out).length} tornadoes, ${all.filter(c=>!c.out).length} busts`;
+    tb.innerHTML=rows.map(c=>`<tr class="case-row" tabindex="0" data-n="${esc(c.n)}"><td><span class="dot" style="background:${c.out?'var(--tor)':'var(--bust)'}"></span>${esc(c.name)}${c.added?'<span class="tag">Added</span>':''}</td><td>${esc(c.local)}${c.utc?`<br><small class="muted">${esc(c.utc)} UTC</small>`:''}</td><td>${esc(c.out?(c.rating?c.rating+' tornado':'Tornado'):c.rating||'Bust')}</td><td>${esc(c.radar)}${c.raob?' / '+esc(c.raob):''}</td><td class="muted small">${esc(c.env)} ${/^https?:\/\//.test(c.src)?`<a href="${esc(c.src)}" target="_blank" rel="noopener">Source</a>`:''}</td></tr>`).join('');
+  }
+  const focus=n=>{show(n);svg.closest('.casemap').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'center'});};
+  tb.addEventListener('click',e=>{const r=e.target.closest('tr');if(r&&e.target.tagName!=='A')focus(r.dataset.n);});
+  tb.addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.closest('tr');if(r)focus(r.dataset.n);}});
+  document.querySelectorAll('[data-f]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.f;document.querySelectorAll('[data-f]').forEach(x=>x.setAttribute('aria-pressed',x===b));draw();}));
+  document.querySelectorAll('.sortbtn').forEach(b=>b.addEventListener('click',()=>{dir=key===b.dataset.k?-dir:1;key=b.dataset.k;draw();}));
+  $('case-form').addEventListener('submit',async e=>{e.preventDefault();const btn=$('case-btn');btn.disabled=true;
+    try{await Store.add('cases',{name:$('c-name').value.trim(),date:$('c-date').value,time:$('c-time').value.trim(),out:+$('c-out').value,rating:$('c-rating').value.trim(),radar:$('c-radar').value.trim(),lat:+$('c-lat').value,lon:+$('c-lon').value,env:$('c-env').value.trim(),src:$('c-src').value.trim(),created:new Date().toISOString()});
+      toast('Case added');e.target.reset();$('add-case').open=false;}
+    catch(err){toast(err&&err.code==='invalid_argument'?'You can view cases but not add them. Ask the owner for Contributor access.':'Could not add the case. Try again.');}
+    btn.disabled=false;});
+  Store.on(draw);draw();
+})();
+
+/* ================= GUIDE ================= */
+$('ranks').innerHTML=[
+  ['0–500 m SRH','Coffer: 159 vs 80 m²/s² in VORTEX2 composites; top SRH layer in the 2025 HRRR study',5,'Very strong'],
+  ['STP (0–500 m version)','Mean 3.3 vs 0.6; about 1 is the rough dividing line',5,'Very strong'],
+  ['Effective / 0–1 km SRH','Mean about 381 vs 131 m²/s²',4,'Strong'],
+  ['0–1 km bulk shear','Signal starts around 20–30 kt',4,'Strong'],
+  ['Discrete storm mode','86% of EF3+ tornadoes came from discrete or clustered supercells',4,'Strong'],
+  ['ML LCL height','Mean about 955 m vs 1,424 m',3,'Moderate'],
+  ['Deep-layer shear','About 57 vs 44 kt; better at "supercell or not" than "tornado or not"',3,'Moderate'],
+  ['1–3 km storm-relative wind','Faster in significant tornado storms in newer HRRR data',2,'Emerging'],
+  ['MLCAPE','Needed, but barely differs between tornadoes and busts',1,'Weak']
+].map(r=>`<li><b>${r[0]}</b><span class="what">${r[1]}</span><div><div class="strength" aria-hidden="true">${[1,2,3,4,5].map(i=>`<i class="${i<=r[2]?'on':''}"></i>`).join('')}</div><div class="small muted">${r[3]} evidence</div></div></li>`).join('');
+
+/* ================= BOOT ================= */
+Store.on(renderLog);
+go((location.hash||'#home').slice(1),false);
+renderLog();
+Store.init();
+</script>

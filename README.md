@@ -24,3 +24,10 @@ The site (`index.html`) includes:
 Add a row to `data/cases.csv` and the matching line to `CASES` in `tools/whirl_pipeline.py`. Busts (warned supercells with no tornado) are the biggest gap: we need at least seven more before the weights mean anything.
 
 Not an official forecast. Always follow NWS warnings.
+
+## How the app is built
+
+- `src/app.html` is the one source file. The **WHIRL engine** (every factor, weight and tier) is a single `WHIRL` object near the top of its script; the calculator, the "how the score works" table and the chase log all read from it.
+- `python3 tools/build.py` turns it into `index.html` (GitHub Pages; saves the chase log in your browser) and `dist/artifact.html` (the shared Claude page, where Keith and Brian keep one chase log together).
+- `data/geo.json` holds the map shapes and case locations; `data/fit.json` places cases you add on the map.
+- The **chase log** is the learning loop: score a day, mark tornado or bust afterward, and the "Is the score working?" chart finds the cutoff that best separates the two.
