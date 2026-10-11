@@ -880,7 +880,11 @@ $('entries').addEventListener('click',async e=>{const b=e.target.closest('[data-
     if(started){setTimeout(()=>map.invalidateSize(),60);return;}started=true;
     map=L.map('livemap',{scrollWheelZoom:false,worldCopyJump:true}).setView([39.4,-89.8],6);
     map.on('click focus',()=>map.scrollWheelZoom.enable());map.on('mouseout blur',()=>map.scrollWheelZoom.disable());
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:12}).addTo(map);
+    // Esri dark gray canvas: free, no API key. Labels sit in their own pane above the radar.
+    const ESRI='https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+    L.tileLayer(ESRI+'World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',{attribution:'Basemap &copy; Esri, HERE, Garmin, OpenStreetMap contributors',maxZoom:16}).addTo(map);
+    map.createPane('labels');map.getPane('labels').style.zIndex=450;map.getPane('labels').style.pointerEvents='none';
+    L.tileLayer(ESRI+'World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',{pane:'labels',maxZoom:16}).addTo(map);
     const sites={KILX:[40.150,-89.337,'Lincoln IL'],KLSX:[38.699,-90.683,'St. Louis'],KLOT:[41.605,-88.085,'Chicago'],KPAH:[37.068,-88.772,'Paducah'],KSGF:[37.235,-93.401,'Springfield MO'],KDVN:[41.612,-90.581,'Quad Cities'],KVWX:[38.260,-87.725,'Evansville'],KEAX:[38.810,-94.264,'Kansas City'],KDMX:[41.731,-93.723,'Des Moines'],KIND:[39.708,-86.280,'Indianapolis']};
     Object.entries(sites).forEach(([k,[la,lo,n]])=>L.circleMarker([la,lo],{radius:5,color:'#9FDCE4',weight:2,fillColor:'#11283A',fillOpacity:1}).bindPopup(`<b>${k} ${n}</b><br><a href="https://radar.weather.gov/station/${k.toLowerCase()}/standard" target="_blank" rel="noopener">Open this radar</a>`).addTo(map));
     L.circleMarker([38.52,-89.98],{radius:6,color:'#E7C76A',weight:2,fill:false}).bindPopup('<b>Belleville</b>').addTo(map);
