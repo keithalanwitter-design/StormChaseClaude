@@ -722,7 +722,9 @@ $('entries').addEventListener('click',async e=>{const b=e.target.closest('[data-
 
 /* ================= LIVE MAP ================= */
 (function(){
-  if(!window.L){$('live-on').hidden=true;$('live-off').hidden=false;return;}
+  if(!window.L){$('live-on').hidden=true;$('live-off').hidden=false;
+    if(/github\.io$/.test(location.hostname)){$('live-off').innerHTML='<h3>The map didn\'t load</h3><p>The map library couldn\'t download. Check your connection, then refresh this page.</p>';}
+    return;}
   let map,started=false;const layers={},status=(k,t)=>{const e=$('ls-'+k);if(e)e.textContent=t;};
   const SPC_COLORS={TSTM:'#C1E9C1',MRGL:'#66A366',SLGT:'#FFE066',ENH:'#FFA366',MDT:'#E06666',HIGH:'#EE99EE'};
   const findCode=p=>{for(const v of Object.values(p||{})){const m=String(v).toUpperCase().match(/\b(TSTM|MRGL|SLGT|ENH|MDT|HIGH)\b/);if(m)return m[1];}return null;};
