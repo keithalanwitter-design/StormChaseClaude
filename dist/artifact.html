@@ -195,11 +195,23 @@ ul.plain li{margin:5px 0}
 .sources{columns:2;padding-left:18px;font-size:14px}
 .sources li{margin:4px 0;break-inside:avoid}
 
-.livebar{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-bottom:12px}
+.radarbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:12px}
+.lpanel summary{cursor:pointer;font-family:var(--head);font-size:18px;font-weight:600;padding:2px 0 8px}
+.lgroup{margin-bottom:10px}
+.lgroup>span{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px}
+.lpanel .layer{padding:3px 0}
+.layer small.bad{color:var(--tor)}
+.obs-lbl{font:600 11px var(--body);color:#fff;text-shadow:0 0 3px #000,0 0 2px #000;white-space:nowrap}
+#livemap.obs-far .obs-lbl{display:none}
+.cell{border-left:4px solid #E0812F;padding:6px 10px;background:var(--paper);border-radius:0 8px 8px 0;margin-bottom:6px;font-size:14px;cursor:pointer}
+.cell.tvs{border-color:#E0302B}
+.cell b,.warn b{display:block}
+.site-foot{border-top:1px solid var(--rule);padding-block:24px 40px;color:var(--muted);font-size:14px}
+.site-foot .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
 .layer{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
 .layer input{width:17px;height:17px;accent-color:var(--teal)}
 .layer small{font-weight:400;color:var(--muted)}
-.livegrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px}
+.livegrid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px}
 #livemap{height:min(72vh,640px);border-radius:12px;border:1px solid var(--rule);background:var(--scope)}
 .side{display:grid;gap:14px;align-content:start;max-height:min(72vh,640px);overflow:auto}
 .side h3{font-size:18px;margin-bottom:6px}
@@ -223,7 +235,8 @@ ul.plain li{margin:5px 0}
   .tabs{position:fixed;left:0;right:0;bottom:0;margin:0;justify-content:space-around;background:var(--bar-bg);border-top:1px solid var(--rule);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));backdrop-filter:blur(6px)}
   .tabs button{flex-direction:column;gap:2px;font-size:12px;padding:6px 8px}
   .tabs button[aria-current="page"]{background:var(--teal-soft);color:var(--ink)}
-  .view{padding-bottom:110px}
+  .view{padding-bottom:40px}
+  .site-foot{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
   .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 }
 @media (max-width:640px){
@@ -267,7 +280,7 @@ ul.plain li{margin:5px 0}
       <h1>Find the Midwest tornado before it finds the road.</h1>
       <p class="lede">WHIRL is our own tornado-targeting score, chase log and case library for Illinois and the states around it. Score a setup, log how the day went, and watch the engine learn which numbers matter.</p>
       <div class="stat"><b>172</b><span>confirmed Illinois tornadoes by late June 2026, a state record and at least twice any other state (<a href="https://www.nprillinois.org/illinois/2026-06-28/illinois-leads-the-nation-in-confirmed-tornadoes-after-hot-and-rainy-spring-season-most-of-them-in-central-illinois" target="_blank" rel="noopener">NPR Illinois</a>)</span></div>
-      <div class="btns"><button class="btn primary" data-go="score">Score a setup</button><button class="btn" data-go="log">Open the chase log</button></div>
+      <div class="btns"><button class="btn primary" data-go="live">Open the live map</button><button class="btn" data-go="score">Score a setup</button><button class="btn quiet" data-go="log">Chase log</button></div>
     </div>
     <figure class="scope">
       <svg id="scope" viewBox="0 0 960 700" role="img" aria-label="Midwest radar scope centered on Lincoln, Illinois, with tornado and bust cases"></svg>
@@ -285,7 +298,7 @@ ul.plain li{margin:5px 0}
     <ul class="links">
       <li><a href="https://www.spc.noaa.gov/products/outlook/day1otlk.html" target="_blank" rel="noopener">SPC Day 1 outlook<small>Risk areas and tornado odds for today.</small></a></li>
       <li><a href="https://www.spc.noaa.gov/products/outlook/day2otlk.html" target="_blank" rel="noopener">SPC Day 2 outlook<small>The night-before read.</small></a></li>
-      <li><a href="https://www.spc.noaa.gov/exper/mesoanalysis/new/viewsector.php?sector=20" target="_blank" rel="noopener">Mesoanalysis, Midwest<small>Live SRH, STP, LCL and CIN for the calculator.</small></a></li>
+      <li><a href="https://www.spc.noaa.gov/exper/mesoanalysis/" target="_blank" rel="noopener">SPC mesoanalysis<small>Pick the Midwest region for live SRH, STP, LCL and CIN.</small></a></li>
       <li><a href="https://www.spc.noaa.gov/products/md/" target="_blank" rel="noopener">Mesoscale discussions<small>Where SPC is watching next.</small></a></li>
       <li><a href="https://www.spc.noaa.gov/products/watch/" target="_blank" rel="noopener">Active watches<small>Tornado and severe watches.</small></a></li>
       <li><a href="https://www.spc.noaa.gov/climo/reports/today.html" target="_blank" rel="noopener">Today's storm reports<small>Ground truth as it comes in.</small></a></li>
@@ -397,25 +410,25 @@ ul.plain li{margin:5px 0}
 
 <!-- LIVE -->
 <section class="view wrap" id="v-live" aria-label="Live" hidden>
-  <div class="head"><div><h2>Live map</h2><p>Radar, SPC outlooks, watches, warnings and tropical storms on one map. Warnings refresh every two minutes and radar every five.</p></div><span class="note" id="live-updated"></span></div>
-  <div id="live-off" hidden class="empty"><h3>The live map runs on the WHIRL website</h3><p>This shared page can't load outside weather data. Open the public WHIRL site for live radar, outlooks, watches and warnings; the chase log stays here.</p><a class="btn primary" href="https://keithalanwitter-design.github.io/StormChaseClaude/#live" target="_blank" rel="noopener">Open the live map</a></div>
+  <div class="head"><div><h2>Live map</h2><p>Radar, storm rotation, storm reports, SPC outlooks, watches, warnings, surface moisture and tropical storms on one map. All free public feeds, refreshed automatically.</p></div>
+    <div class="btns"><span class="note" id="live-updated" style="align-self:center"></span><button class="btn quiet" type="button" id="live-refresh">Refresh now</button></div></div>
+  <div id="live-off" hidden class="empty"><h3>The live map runs on the WHIRL website</h3><p>Claude pages can't load outside weather data, so the live map lives on the website.</p><a class="btn primary" href="https://keithalanwitter-design.github.io/StormChaseClaude/#live" target="_blank" rel="noopener">Open the WHIRL website</a></div>
   <div id="live-on">
-    <div class="livebar" role="group" aria-label="Map layers">
-      <label class="layer"><input type="checkbox" id="ly-radar" checked> Radar <small id="ls-radar"></small></label>
-      <label class="layer"><input type="checkbox" id="ly-outlook" checked> SPC Day 1 outlook <small id="ls-outlook"></small></label>
-      <label class="layer"><input type="checkbox" id="ly-torprob"> Tornado odds <small id="ls-torprob"></small></label>
-      <label class="layer"><input type="checkbox" id="ly-watch" checked> Watches <small id="ls-watch"></small></label>
-      <label class="layer"><input type="checkbox" id="ly-warn" checked> Warnings <small id="ls-warn"></small></label>
-      <label class="layer"><input type="checkbox" id="ly-trop" checked> Tropical <small id="ls-trop"></small></label>
+    <div class="radarbar">
+      <button class="btn quiet" type="button" id="loop-btn">Play radar loop</button>
+      <span class="note" id="loop-time">Latest scan</span>
+      <label class="layer" style="margin-left:auto">Radar opacity <input type="range" id="radar-op" min="20" max="100" value="70" style="width:120px"></label>
     </div>
     <div class="livegrid">
-      <div id="livemap" aria-label="Live weather map"></div>
+      <div id="livemap" tabindex="0" aria-label="Live weather map. Click the map to zoom with the scroll wheel."></div>
       <div class="side">
-        <div><h3>Active warnings</h3><div id="warn-list" class="note">Loading…</div></div>
+        <details class="lpanel" open><summary>Map layers</summary><div id="layer-list"></div></details>
+        <div><h3>Warnings</h3><div id="warn-list" class="note">Loading…</div></div>
+        <div><h3>Rotation on radar</h3><div id="cell-list" class="note">Loading…</div></div>
         <div><h3>Tropical storms</h3><div id="trop-list" class="note">Loading…</div></div>
-        <div class="note"><span class="legend-sw" style="background:#E0302B"></span>Tornado <span class="legend-sw" style="background:#F2A900;margin-left:8px"></span>Severe <span class="legend-sw" style="background:#2EA44F;margin-left:8px"></span>Flash flood<br>Radar: Iowa Environmental Mesonet composite. Outlooks: SPC via NOAA map services. Warnings: National Weather Service. Tropical: National Hurricane Center.</div>
       </div>
     </div>
+    <p class="note" style="margin-top:14px">Sources: radar composite, storm cells, reports, watches and surface observations from the <a href="https://mesonet.agron.iastate.edu" target="_blank" rel="noopener">Iowa Environmental Mesonet</a>; outlooks from the <a href="https://www.spc.noaa.gov" target="_blank" rel="noopener">Storm Prediction Center</a> via NOAA map services; warnings from the <a href="https://www.weather.gov" target="_blank" rel="noopener">National Weather Service</a>; tropical storms from the <a href="https://www.nhc.noaa.gov" target="_blank" rel="noopener">National Hurricane Center</a>. Not an official warning source.</p>
   </div>
 </section>
 
@@ -467,10 +480,10 @@ ul.plain li{margin:5px 0}
       <li><a href="https://par.nsf.gov/biblio/10392883" target="_blank" rel="noopener">TORUS lidar near-ground wind study</a></li>
       <li><a href="https://spc.noaa.gov/exper/archive/events" target="_blank" rel="noopener">SPC Severe Weather Events Archive</a></li>
     </ul>
-    <p class="note">Built by Keith Witter and Brian Hart. Not an official forecast: always follow NWS warnings and keep an escape route.</p>
   </div>
 </section>
 </main>
+<footer class="site-foot"><div class="wrap"><span>WHIRL: Witter–Hart Integrated Rotational Likelihood. Built by Keith Witter and Brian Hart.</span><span>Not an official forecast. Always follow NWS warnings and keep an escape route.</span></div></footer>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
@@ -512,10 +525,26 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTim
 function project(lon,lat){const x=lon+91,y=lat-39,f=[1,x,y,x*y,x*x,y*y];return [f.reduce((s,v,k)=>s+v*FIT.cx[k],0),f.reduce((s,v,k)=>s+v*FIT.cy[k],0)];}
 
 /* ================= STORAGE =================
-   Shared store when the page runs as a Claude artifact (Keith and Brian see
-   the same log). Elsewhere it keeps entries in this browser only. */
-const Store={mode:'local',db:null,user:null,me:null,log:[],cases:[],subs:[],
+   Three places the chase log and added cases can live, tried in order:
+   1. Supabase (the website): one shared log for the team, after email sign-in.
+      Set it up in config.js; see supabase/README.md.
+   2. The Claude page's built-in shared store.
+   3. This browser only, when neither is available. */
+const CFG=window.WHIRL_CONFIG||{};
+const TABLE={log:'whirl_log',cases:'whirl_cases'};
+const Store={mode:'local',db:null,sb:null,user:null,me:null,email:null,log:[],cases:[],
   async init(){
+    if(CFG.supabaseUrl&&CFG.supabaseAnonKey&&window.supabase){
+      this.sb=window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey);
+      this.mode='supabase';
+      const {data}=await this.sb.auth.getSession();
+      this.email=data.session?.user?.email||null;
+      this.sb.auth.onAuthStateChange((_e,sess)=>{const em=sess?.user?.email||null;if(em!==this.email){this.email=em;this.loadSB();}});
+      await this.loadSB();
+      this.sb.channel('whirl').on('postgres_changes',{event:'*',schema:'public',table:'whirl_log'},()=>this.loadSB())
+        .on('postgres_changes',{event:'*',schema:'public',table:'whirl_cases'},()=>this.loadSB()).subscribe();
+      return;
+    }
     try{
       if(window.claude&&claude.use){
         const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
@@ -525,29 +554,50 @@ const Store={mode:'local',db:null,user:null,me:null,log:[],cases:[],subs:[],
     if(this.mode==='shared'){
       this.db.collection('log').orderBy('date','desc').onSnapshot(s=>{this.log=s.docs.map(d=>({id:d.id,...d.data()}));this.emit();},()=>this.fallback());
       this.db.collection('cases').onSnapshot(s=>{this.cases=s.docs.map(d=>({id:d.id,...d.data()}));this.emit();},()=>{});
-      $('sync').className='sync live';$('sync').lastChild.textContent='Shared with your team';
+      this.setSync(true,'Shared with your team');
     }else this.fallback();
+  },
+  setSync(live,txt){$('sync').className='sync'+(live?' live':'');$('sync').lastChild.textContent=txt;},
+  async loadSB(){
+    if(!this.email){this.log=[];this.cases=[];this.setSync(false,'Not signed in');this.banner('signin');this.emit();return;}
+    const [l,c]=await Promise.all([this.sb.from(TABLE.log).select('*').order('date',{ascending:false}),this.sb.from(TABLE.cases).select('*')]);
+    if(l.error||c.error){this.setSync(false,'Sync problem');this.banner('error',(l.error||c.error).message);this.log=[];this.cases=[];this.emit();return;}
+    this.log=l.data;this.cases=c.data;this.setSync(true,'Synced as '+this.email.split('@')[0]);this.banner('ok');this.emit();
+  },
+  banner(kind,msg){
+    const b=$('log-banner');
+    if(kind==='ok'){b.hidden=false;b.innerHTML=`Signed in as <b>${esc(this.email)}</b>. Your team sees every entry live. <button class="linkbtn" id="sb-out">Sign out</button>`;$('sb-out').onclick=()=>this.sb.auth.signOut();return;}
+    if(kind==='error'){b.hidden=false;b.textContent=/permission|policy|row-level/i.test(msg||'')?'You are signed in, but this email is not on the WHIRL team list yet. Ask Keith to add it.':'Could not reach the shared log: '+msg;return;}
+    b.hidden=false;b.innerHTML=`<form id="sb-form" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span>Sign in to see and add to the team chase log.</span><input type="email" id="sb-email" required placeholder="you@example.com" style="max-width:260px" aria-label="Email"><button class="btn primary" type="submit">Email me a sign-in link</button></form>`;
+    $('sb-form').onsubmit=async e=>{e.preventDefault();const em=$('sb-email').value.trim();
+      const {error}=await this.sb.auth.signInWithOtp({email:em,options:{emailRedirectTo:location.origin+location.pathname}});
+      toast(error?'Could not send the link: '+error.message:'Check your email for the sign-in link');};
   },
   fallback(){this.mode='local';this.db=null;
     try{this.log=JSON.parse(localStorage.getItem('whirl-log')||'[]');this.cases=JSON.parse(localStorage.getItem('whirl-cases')||'[]');}catch(e){this.log=[];this.cases=[];}
-    $('sync').className='sync';$('sync').lastChild.textContent='Saved on this device';
-    const b=$('log-banner');b.hidden=false;b.textContent='This copy saves entries in this browser only. Open the shared WHIRL page in Claude to keep one log with your chase partner.';
+    this.setSync(false,'Saved on this device');
+    const b=$('log-banner');b.hidden=false;b.textContent='The team log is not connected yet, so entries save in this browser only.';
     this.emit();},
   saveLocal(){try{localStorage.setItem('whirl-log',JSON.stringify(this.log));localStorage.setItem('whirl-cases',JSON.stringify(this.cases));}catch(e){}},
+  canWrite(){return this.mode!=='supabase'||!!this.email;},
   async add(col,data){
-    if(this.mode==='shared'){await this.db.collection(col).add({...data,by:this.me||null});}
-    else{this[col]=[{id:'l'+Date.now(),...data},...this[col]];this.saveLocal();this.emit();}
+    if(this.mode==='supabase'){if(!this.email)throw {code:'signin'};const {created,...row}=data;const {error}=await this.sb.from(TABLE[col]).insert(row);if(error)throw error;await this.loadSB();return;}
+    if(this.mode==='shared'){await this.db.collection(col).add({...data,by:this.me||null});return;}
+    this[col]=[{id:'l'+Date.now(),...data},...this[col]];this.saveLocal();this.emit();
   },
   async patch(col,id,data){
-    if(this.mode==='shared'){await this.db.doc(col+'/'+id).update(data);}
-    else{this[col]=this[col].map(x=>x.id===id?{...x,...data}:x);this.saveLocal();this.emit();}
+    if(this.mode==='supabase'){const {error}=await this.sb.from(TABLE[col]).update(data).eq('id',id);if(error)throw error;await this.loadSB();return;}
+    if(this.mode==='shared'){await this.db.doc(col+'/'+id).update(data);return;}
+    this[col]=this[col].map(x=>x.id===id?{...x,...data}:x);this.saveLocal();this.emit();
   },
   async remove(col,id){
-    if(this.mode==='shared'){await this.db.doc(col+'/'+id).delete();}
-    else{this[col]=this[col].filter(x=>x.id!==id);this.saveLocal();this.emit();}
+    if(this.mode==='supabase'){const {error}=await this.sb.from(TABLE[col]).delete().eq('id',id);if(error)throw error;await this.loadSB();return;}
+    if(this.mode==='shared'){await this.db.doc(col+'/'+id).delete();return;}
+    this[col]=this[col].filter(x=>x.id!==id);this.saveLocal();this.emit();
   },
   listeners:[],on(f){this.listeners.push(f);},emit(){this.listeners.forEach(f=>f());}
 };
+const saveError=err=>err&&err.code==='signin'?'Sign in on the Chase log tab first':err&&(err.code==='invalid_argument'||/policy|row-level/i.test(err.message||''))?'This account cannot add entries yet. Ask Keith to add your email to the team.':'Could not save. Check your connection and try again.';
 async function names(ids){
   ids=[...new Set(ids.filter(Boolean))];
   if(!Store.user||!ids.length)return {};
@@ -618,7 +668,7 @@ $('save-form').addEventListener('submit',async e=>{
   const i=readInputs(),s=WHIRL.score(i).total;
   try{await Store.add('log',{date:$('f-date').value,place:$('f-place').value.trim(),outcome:$('f-out').value,notes:$('f-notes').value.trim(),inputs:i,score:+s.toFixed(2),engine:WHIRL.version,created:new Date().toISOString()});
     toast('Saved to the chase log');$('f-place').value='';$('f-notes').value='';}
-  catch(err){toast(err&&err.code==='invalid_argument'?'You can view this log but not add to it. Ask the owner for Contributor access.':'Could not save. Check your connection and try again.');}
+  catch(err){toast(saveError(err));}
   btn.disabled=false;
 });
 runScore();
@@ -657,10 +707,11 @@ async function renderLog(){
   $('st-split').textContent=`${t} / ${b}`;
   renderCalib(rows);
   const shown=rows.filter(r=>logFilter==='all'||r.outcome===logFilter), box=$('entries');
+  if(!rows.length&&!Store.canWrite()){box.innerHTML=`<div class="empty"><h3>Sign in to open the team log</h3><p>Use the sign-in box above. Entries you and Brian add show up here for both of you.</p></div>`;return;}
   if(!rows.length){box.innerHTML=`<div class="empty"><h3>No chase days yet</h3><p>Score a setup and save it. Each day you log, tornado or bust, teaches the score something.</p><button class="btn primary" data-go="score">Score your first day</button></div>`;return;}
   if(!shown.length){box.innerHTML=`<div class="empty"><p>No days match this filter.</p></div>`;return;}
   const ps=await names(shown.map(r=>r.by));
-  box.innerHTML=shown.map(r=>{const i=r.inputs||{};const who=r.by&&ps[r.by]?(ps[r.by].isMe?'you':(ps[r.by].name||'a teammate')):'';
+  box.innerHTML=shown.map(r=>{const i=r.inputs||{};const who=r.author_email?(r.author_email===Store.email?'you':r.author_email.split('@')[0]):r.by&&ps[r.by]?(ps[r.by].isMe?'you':(ps[r.by].name||'a teammate')):'';
     return `<article class="entry" data-id="${esc(r.id)}">
       <div class="sc" style="background:${tierColor(r.score)}">${(+r.score).toFixed(1)}</div>
       <div><h3>${esc(r.place||'Untitled target')}</h3>
@@ -714,93 +765,131 @@ $('entries').addEventListener('click',async e=>{const b=e.target.closest('[data-
   $('case-form').addEventListener('submit',async e=>{e.preventDefault();const btn=$('case-btn');btn.disabled=true;
     try{await Store.add('cases',{name:$('c-name').value.trim(),date:$('c-date').value,time:$('c-time').value.trim(),out:+$('c-out').value,rating:$('c-rating').value.trim(),radar:$('c-radar').value.trim(),lat:+$('c-lat').value,lon:+$('c-lon').value,env:$('c-env').value.trim(),src:$('c-src').value.trim(),created:new Date().toISOString()});
       toast('Case added');e.target.reset();$('add-case').open=false;}
-    catch(err){toast(err&&err.code==='invalid_argument'?'You can view cases but not add them. Ask the owner for Contributor access.':'Could not add the case. Try again.');}
+    catch(err){toast(saveError(err));}
     btn.disabled=false;});
   Store.on(draw);draw();
 })();
 
-/* ================= LIVE MAP ================= */
+/* ================= LIVE MAP =================
+   Every overlay is one entry in LAYERS. To add a layer, add an entry:
+   {id, group, label, on, every (minutes), url, draw(data) -> Leaflet layer, note(data) -> status text}. */
 (function(){
   if(!window.L){$('live-on').hidden=true;$('live-off').hidden=false;
     if(/github\.io$/.test(location.hostname)){$('live-off').innerHTML='<h3>The map didn\'t load</h3><p>The map library couldn\'t download. Check your connection, then refresh this page.</p>';}
     return;}
-  let map,started=false;const layers={},status=(k,t)=>{const e=$('ls-'+k);if(e)e.textContent=t;};
-  const SPC_COLORS={TSTM:'#C1E9C1',MRGL:'#66A366',SLGT:'#FFE066',ENH:'#FFA366',MDT:'#E06666',HIGH:'#EE99EE'};
-  const findCode=p=>{for(const v of Object.values(p||{})){const m=String(v).toUpperCase().match(/\b(TSTM|MRGL|SLGT|ENH|MDT|HIGH)\b/);if(m)return m[1];}return null;};
-  const getJSON=async u=>{const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw new Error(r.status);return r.json();};
-  const time=d=>d?new Date(d).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):'';
-  function stamp(){$('live-updated').textContent='Updated '+new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});}
-  function radar(){
-    if(layers.radar)map.removeLayer(layers.radar);
-    layers.radar=L.tileLayer('https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png?t='+Date.now(),{opacity:.7,zIndex:5,attribution:'Radar: IEM'});
-    if($('ly-radar').checked)layers.radar.addTo(map);status('radar','composite, '+time(Date.now()));
-  }
-  async function outlook(){
-    try{const g=await getJSON('https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer/1/query?where=1%3D1&outFields=*&f=geojson');
-      if(layers.outlook)map.removeLayer(layers.outlook);
-      layers.outlook=L.geoJSON(g,{style:f=>{const c=SPC_COLORS[findCode(f.properties)]||'#88a';return {color:c,weight:1.5,fillColor:c,fillOpacity:.22};},
-        onEachFeature:(f,l)=>{const c=findCode(f.properties);l.bindPopup(`<b>SPC Day 1: ${c||'Outlook'}</b><br>${esc(f.properties.label2||f.properties.LABEL2||'')}`);}});
-      if($('ly-outlook').checked)layers.outlook.addTo(map);layers.outlook.bringToBack&&layers.outlook.bringToBack();
-      const codes=[...new Set(g.features.map(f=>findCode(f.properties)).filter(Boolean))];status('outlook',codes.length?'highest '+['TSTM','MRGL','SLGT','ENH','MDT','HIGH'].filter(c=>codes.includes(c)).pop():'no risk areas');
-    }catch(e){status('outlook','could not load');}
-  }
-  async function torprob(){
-    try{const g=await getJSON('https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer/3/query?where=1%3D1&outFields=*&f=geojson');
-      if(layers.torprob)map.removeLayer(layers.torprob);
-      layers.torprob=L.geoJSON(g,{style:()=>({color:'#B8322A',weight:2,dashArray:'5 4',fillOpacity:.05}),onEachFeature:(f,l)=>{const p=f.properties||{};l.bindPopup(`<b>Tornado odds</b><br>${esc(p.label2||p.LABEL2||p.label||p.LABEL||'')}`);}});
-      if($('ly-torprob').checked)layers.torprob.addTo(map);status('torprob',g.features.length?g.features.length+' areas':'none today');
-    }catch(e){status('torprob','could not load');}
-  }
-  async function watches(){
-    try{const g=await getJSON('https://mesonet.agron.iastate.edu/json/spcwatch.py');
-      if(layers.watch)map.removeLayer(layers.watch);
-      layers.watch=L.geoJSON(g,{style:f=>{const t=JSON.stringify(f.properties||{}).toUpperCase();const tor=t.includes('TOR');return {color:tor?'#E0302B':'#3B6FD8',weight:3,fill:false};},
-        onEachFeature:(f,l)=>{const p=f.properties||{};const t=JSON.stringify(p).toUpperCase().includes('TOR')?'Tornado watch':'Severe thunderstorm watch';l.bindPopup(`<b>${t} ${esc(p.number||p.num||'')}</b><br>Until ${esc(time(p.expire||p.expire_utc||p.utc_expire))}`);}});
-      if($('ly-watch').checked)layers.watch.addTo(map);status('watch',g.features.length?g.features.length+' active':'none');
-    }catch(e){status('watch','could not load');}
-  }
+  const IEM='https://mesonet.agron.iastate.edu', MS=n=>`https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer/${n}/query?where=1%3D1&outFields=*&f=geojson`;
+  const getJSON=async u=>{const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return r.json();};
+  const clock=d=>{if(!d)return '';const t=new Date(d);return isNaN(t)?'':t.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});};
+  const yes=v=>v!=null&&v!==''&&!/^(none|0|false|null)$/i.test(String(v).trim());
+  const anyText=p=>Object.values(p||{}).join(' ').toUpperCase();
+  const inMidwest=([lon,lat])=>lon>-104&&lon<-78&&lat>30&&lat<49.5;
+  const CAT={TSTM:'#C1E9C1',MRGL:'#66A366',SLGT:'#FFE066',ENH:'#FFA366',MDT:'#E06666',HIGH:'#EE99EE'};
+  const catOf=p=>{const m=anyText(p).match(/\b(TSTM|MRGL|SLGT|ENH|MDT|HIGH)\b/);return m?m[1]:null;};
+  const PROB={2:'#2E8B2E',5:'#8B5A2B',10:'#E8C000',15:'#E53935',30:'#D63AD6',45:'#8E44AD',60:'#1F4E8C'};
+  const probOf=p=>{const t=anyText(p);if(/SIGN/.test(t))return 'SIGN';const m=t.match(/(\d*\.\d+|\d+)\s*%?/);if(!m)return null;let v=parseFloat(m[1]);if(v<1)v=Math.round(v*100);return v;};
+  const outlookLayer=(g,kind)=>L.geoJSON(g,{
+    style:f=>{if(kind==='cat'){const c=CAT[catOf(f.properties)]||'#8899AA';return {color:c,weight:1.5,fillColor:c,fillOpacity:.22};}
+      const v=probOf(f.properties);if(v==='SIGN')return {color:'#111',weight:2,dashArray:'6 5',fill:false};const c=PROB[v]||'#888';return {color:c,weight:2,fillColor:c,fillOpacity:.12};},
+    onEachFeature:(f,l)=>{const p=f.properties;l.bindPopup(kind==='cat'?`<b>${esc(catOf(p)||'Outlook')}</b><br>${esc(p.label2||p.LABEL2||'')}`:`<b>${esc(kind)}</b><br>${probOf(p)==='SIGN'?'Significant severe area':esc(probOf(p))+'% chance within 25 miles'}`);}});
+  const outlookNote=(g,kind)=>{if(!g.features.length)return 'none today';if(kind==='cat'){const c=[...new Set(g.features.map(f=>catOf(f.properties)))];return 'highest '+(['TSTM','MRGL','SLGT','ENH','MDT','HIGH'].filter(x=>c.includes(x)).pop()||'?');}
+    const v=g.features.map(f=>probOf(f.properties)).filter(x=>typeof x==='number');return v.length?'up to '+Math.max(...v)+'%':g.features.length+' areas';};
   const WEV=['Tornado Warning','Severe Thunderstorm Warning','Flash Flood Warning'];
-  const code=ev=>ev.startsWith('Tornado')?'TO':ev.startsWith('Severe')?'SV':'FF';
-  const WCOL={TO:'#E0302B',SV:'#F2A900',FF:'#2EA44F'};
-  async function warnings(){
-    try{const g=await getJSON('https://api.weather.gov/alerts/active?event='+encodeURIComponent(WEV.join(',')));
-      const feats=g.features.filter(f=>f.geometry);
-      if(layers.warn)map.removeLayer(layers.warn);
-      layers.warn=L.geoJSON({type:'FeatureCollection',features:feats},{style:f=>{const c=WCOL[code(f.properties.event)];return {color:c,weight:2.5,fillColor:c,fillOpacity:.18};},
-        onEachFeature:(f,l)=>{const p=f.properties;l.bindPopup(`<b>${esc(p.event)}</b><br>${esc(p.areaDesc)}<br>Until ${esc(time(p.expires))}<br><span style="color:#56656B">${esc(p.senderName)}</span>`);f._layer=l;}});
-      if($('ly-warn').checked)layers.warn.addTo(map);
-      const order={TO:0,SV:1,FF:2};const list=feats.slice().sort((a,b)=>order[code(a.properties.event)]-order[code(b.properties.event)]);
-      status('warn',feats.length?feats.length+' active':'none');
-      $('warn-list').innerHTML=list.length?list.slice(0,40).map((f,k)=>`<div class="warn ${code(f.properties.event)}" data-k="${k}" tabindex="0" role="button"><b>${esc(f.properties.event)}</b>${esc(f.properties.areaDesc.slice(0,90))}<br><span class="muted">Until ${esc(time(f.properties.expires))}</span></div>`).join(''):'No tornado, severe or flash flood warnings right now.';
-      $('warn-list').onclick=$('warn-list').onkeydown=e=>{if(e.type==='keydown'&&e.key!=='Enter')return;const d=e.target.closest('.warn');if(!d)return;const f=list[+d.dataset.k];map.fitBounds(f._layer.getBounds(),{maxZoom:9});f._layer.openPopup();};
-    }catch(e){status('warn','could not load');$('warn-list').innerHTML='Warnings could not load. Check <a href="https://www.weather.gov" target="_blank" rel="noopener">weather.gov</a>.';}
+  const wcode=ev=>ev.startsWith('Tornado')?'TO':ev.startsWith('Severe')?'SV':'FF', WCOL={TO:'#E0302B',SV:'#F2A900',FF:'#2EA44F'};
+  const LSRC=t=>/TORNADO/.test(t)?'#E0302B':/FUNNEL|WALL CLOUD/.test(t)?'#E0812F':/HAIL/.test(t)?'#2EA44F':/WIND|TSTM/.test(t)?'#3B6FD8':'#9DB3BC';
+  const dewCol=d=>d==null?'#9DB3BC':d>=70?'#1B9E5A':d>=65?'#4CC37A':d>=60?'#B9D94A':d>=55?'#E2C14A':'#C0A080';
+  const NETS=['IL','MO','IA','IN','WI','KY','AR','KS','NE','OK','TN','MI','OH','MN'].map(s=>s+'_ASOS');
+  let map;
+  const LAYERS=[
+    {id:'cells',group:'Radar',label:'Storm cells and rotation',on:true,every:5,url:IEM+'/geojson/nexrad_attr.py',
+      draw:g=>{const feats=g.features.filter(f=>inMidwest(f.geometry.coordinates));
+        return L.geoJSON({type:'FeatureCollection',features:feats.filter(f=>yes(f.properties.meso)||yes(f.properties.tvs)||+f.properties.max_dbz>=50)},{
+          pointToLayer:(f,ll)=>{const p=f.properties,t=yes(p.tvs),m=yes(p.meso);return L.circleMarker(ll,{radius:t?9:m?7:4,color:t?'#fff':m?'#E0812F':'#6E8C99',weight:t||m?2.5:1,fillColor:t?'#E0302B':m?'#F2A900':'#9DB3BC',fillOpacity:.9});},
+          onEachFeature:(f,l)=>{const p=f.properties;l.bindPopup(`<b>${yes(p.tvs)?'Tornado vortex signature':yes(p.meso)?'Mesocyclone':'Strong storm'}</b><br>Radar ${esc(p.nexrad)}, cell ${esc(p.storm_id)}<br>Max ${esc(p.max_dbz)} dBZ, top ${esc(p.top)} kft, VIL ${esc(p.vil)}<br>Severe hail ${esc(p.posh)}%, max size ${esc(p.max_size)} in.<br>Moving ${esc(p.drct)}° at ${esc(p.sknt)} kt, ${esc(clock(p.valid))}`);}});},
+      note:g=>{const f=g.features.filter(x=>inMidwest(x.geometry.coordinates));const r=f.filter(x=>yes(x.properties.meso)||yes(x.properties.tvs)).length;return r?r+' rotating':'no rotation';},
+      side:g=>{const f=g.features.filter(x=>inMidwest(x.geometry.coordinates)&&(yes(x.properties.meso)||yes(x.properties.tvs))).sort((a,b)=>yes(b.properties.tvs)-yes(a.properties.tvs));
+        $('cell-list').innerHTML=f.length?f.slice(0,25).map(x=>{const p=x.properties;return `<div class="cell${yes(p.tvs)?' tvs':''}" tabindex="0" role="button" data-ll="${x.geometry.coordinates[1]},${x.geometry.coordinates[0]}"><b>${yes(p.tvs)?'TVS':'Mesocyclone'}: ${esc(p.nexrad)} cell ${esc(p.storm_id)}</b>${esc(p.max_dbz)} dBZ, hail ${esc(p.posh)}%, moving ${esc(p.drct)}° at ${esc(p.sknt)} kt</div>`;}).join(''):'No rotation detected in the Midwest right now.';}},
+    {id:'lsr',group:'Ground truth',label:'Storm reports, last 24 hours',on:true,every:5,url:IEM+'/geojson/lsr.py?hours=24',
+      draw:g=>L.geoJSON({type:'FeatureCollection',features:g.features.filter(f=>inMidwest(f.geometry.coordinates))},{
+        pointToLayer:(f,ll)=>{const t=String(f.properties.typetext||f.properties.type||'').toUpperCase();return L.circleMarker(ll,{radius:/TORNADO/.test(t)?8:5,color:'#fff',weight:1.5,fillColor:LSRC(t),fillOpacity:.95});},
+        onEachFeature:(f,l)=>{const p=f.properties;l.bindPopup(`<b>${esc(p.typetext||p.type||'Report')}${p.magnitude?' '+esc(p.magnitude):''}</b><br>${esc(p.city||'')}${p.state?', '+esc(p.state):''} at ${esc(clock(p.valid))}<br><span style="color:#56656B">${esc((p.remark||'').slice(0,220))}</span>`);}}),
+      note:g=>{const f=g.features.filter(x=>inMidwest(x.geometry.coordinates));const t=f.filter(x=>/TORNADO/i.test(x.properties.typetext||x.properties.type||'')).length;return f.length?`${f.length} report${f.length>1?'s':''}${t?', '+t+' tornado':''}`:'none';}},
+    {id:'d1cat',group:'SPC outlooks',label:'Day 1 categorical',on:true,every:15,url:MS(1),draw:g=>outlookLayer(g,'cat'),note:g=>outlookNote(g,'cat'),back:true},
+    {id:'d1tor',group:'SPC outlooks',label:'Day 1 tornado odds',on:false,every:15,url:MS(3),draw:g=>outlookLayer(g,'Tornado odds'),note:g=>outlookNote(g,'p')},
+    {id:'d1hail',group:'SPC outlooks',label:'Day 1 hail odds',on:false,every:15,url:MS(5),draw:g=>outlookLayer(g,'Hail odds'),note:g=>outlookNote(g,'p')},
+    {id:'d1wind',group:'SPC outlooks',label:'Day 1 wind odds',on:false,every:15,url:MS(7),draw:g=>outlookLayer(g,'Wind odds'),note:g=>outlookNote(g,'p')},
+    {id:'d2cat',group:'SPC outlooks',label:'Day 2 categorical',on:false,every:30,url:MS(9),draw:g=>outlookLayer(g,'cat'),note:g=>outlookNote(g,'cat'),back:true},
+    {id:'watch',group:'Watches and warnings',label:'Watches',on:true,every:2,url:IEM+'/json/spcwatch.py',
+      draw:g=>L.geoJSON(g,{style:f=>{const tor=/TOR/.test(anyText(f.properties));return {color:tor?'#E0302B':'#3B6FD8',weight:3,fill:false};},
+        onEachFeature:(f,l)=>{const p=f.properties||{};l.bindPopup(`<b>${/TOR/.test(anyText(p))?'Tornado':'Severe thunderstorm'} watch ${esc(p.number||p.num||'')}</b><br>Until ${esc(clock(p.expire||p.expire_utc||p.utc_expire))}`);}}),
+      note:g=>g.features.length?g.features.length+' active':'none'},
+    {id:'warn',group:'Watches and warnings',label:'Warnings',on:true,every:2,url:'https://api.weather.gov/alerts/active?event='+encodeURIComponent(WEV.join(',')),
+      draw:g=>L.geoJSON({type:'FeatureCollection',features:g.features.filter(f=>f.geometry)},{style:f=>{const c=WCOL[wcode(f.properties.event)];return {color:c,weight:2.5,fillColor:c,fillOpacity:.18};},
+        onEachFeature:(f,l)=>{const p=f.properties;f._l=l;l.bindPopup(`<b>${esc(p.event)}</b><br>${esc(p.areaDesc)}<br>Until ${esc(clock(p.expires))}<br><span style="color:#56656B">${esc(p.senderName)}</span>`);}}),
+      note:g=>{const n=g.features.filter(f=>f.geometry).length;return n?n+' active':'none';},
+      side:(g,layer)=>{const order={TO:0,SV:1,FF:2};const list=g.features.filter(f=>f.geometry).sort((a,b)=>order[wcode(a.properties.event)]-order[wcode(b.properties.event)]);
+        $('warn-list').innerHTML=list.length?list.slice(0,40).map((f,k)=>`<div class="warn ${wcode(f.properties.event)}" data-k="${k}" tabindex="0" role="button"><b>${esc(f.properties.event)}</b>${esc(f.properties.areaDesc.slice(0,90))}<br><span class="muted">Until ${esc(clock(f.properties.expires))}</span></div>`).join(''):'No tornado, severe or flash flood warnings right now.';
+        $('warn-list').onclick=$('warn-list').onkeydown=e=>{if(e.type==='keydown'&&e.key!=='Enter')return;const d=e.target.closest('.warn');if(!d)return;const f=list[+d.dataset.k];if(f._l){map.fitBounds(f._l.getBounds(),{maxZoom:9});f._l.openPopup();}};}},
+    {id:'obs',group:'Surface',label:'Temperature / dewpoint',on:false,every:10,
+      load:async()=>{const r=await Promise.allSettled(NETS.map(n=>getJSON(IEM+'/api/1/currents.geojson?network='+n)));const feats=r.filter(x=>x.status==='fulfilled').flatMap(x=>x.value.features||[]);if(!feats.length)throw new Error('none');return {type:'FeatureCollection',features:feats};},
+      draw:g=>L.geoJSON(g,{filter:f=>f.properties.tmpf!=null,
+        pointToLayer:(f,ll)=>{const p=f.properties;return L.marker(ll,{icon:L.divIcon({className:'',iconSize:null,html:`<span class="obs-lbl" style="border-left:3px solid ${dewCol(p.dwpf)};padding-left:3px">${Math.round(p.tmpf)}/${p.dwpf==null?'–':Math.round(p.dwpf)}</span>`})});},
+        onEachFeature:(f,l)=>{const p=f.properties;l.bindPopup(`<b>${esc(p.name)} (${esc(p.station)})</b><br>Temp ${esc(p.tmpf)}°F, dewpoint ${esc(p.dwpf)}°F<br>Wind ${esc(p.drct)}° at ${esc(p.sknt)} kt${p.gust?', gusts '+esc(p.gust):''}<br>${esc(clock(p.utc_valid))}`);}}),
+      note:g=>g.features.length+' stations'},
+    {id:'trop',group:'Tropical',label:'Hurricanes and tropical storms',on:true,every:15,url:'https://www.nhc.noaa.gov/CurrentStorms.json',
+      draw:g=>{const CL={HU:'Hurricane',TS:'Tropical storm',TD:'Tropical depression',STS:'Subtropical storm',PTC:'Post-tropical cyclone'};const grp=L.layerGroup();
+        (g.activeStorms||[]).forEach(st=>L.circleMarker([st.latitudeNumeric,st.longitudeNumeric],{radius:9,color:'#fff',weight:2,fillColor:st.classification==='HU'?'#C2362E':'#E0812F',fillOpacity:1}).bindPopup(`<b>${esc(CL[st.classification]||st.classification)} ${esc(st.name)}</b><br>${Math.round(st.intensity*1.15078)} mph, ${esc(st.pressure)} mb`).addTo(grp));return grp;},
+      note:g=>(g.activeStorms||[]).length?(g.activeStorms.length+' active'):'none',
+      side:g=>{const CL={HU:'Hurricane',TS:'Tropical storm',TD:'Tropical depression',STS:'Subtropical storm',PTC:'Post-tropical cyclone'};const st=g.activeStorms||[];
+        $('trop-list').innerHTML=st.length?st.map(x=>`<div class="warn" style="cursor:default"><b>${esc(CL[x.classification]||x.classification)} ${esc(x.name)}</b>${Math.round(x.intensity*1.15078)} mph winds, ${esc(x.latitude)} ${esc(x.longitude)}</div>`).join('')+'<a href="https://www.nhc.noaa.gov" target="_blank" rel="noopener">National Hurricane Center</a>':'No active tropical storms.';}}
+  ];
+  const state={};
+  function layerPanel(){
+    const groups=[...new Set(LAYERS.map(l=>l.group))];
+    $('layer-list').innerHTML='<div class="lgroup"><span>Radar</span><label class="layer"><input type="checkbox" id="ly-radar" checked> Radar composite <small id="ls-radar"></small></label></div>'+
+      groups.map(gname=>`<div class="lgroup">${gname==='Radar'?'':`<span>${gname}</span>`}${LAYERS.filter(l=>l.group===gname).map(l=>`<label class="layer"><input type="checkbox" id="ly-${l.id}"${l.on?' checked':''}> ${l.label} <small id="ls-${l.id}"></small></label>`).join('')}</div>`).join('').replace('<div class="lgroup"></div>','');
+    LAYERS.forEach(l=>$('ly-'+l.id).addEventListener('change',e=>{const st=state[l.id];if(e.target.checked){if(st&&st.layer)st.layer.addTo(map);else load(l);}else if(st&&st.layer)map.removeLayer(st.layer);}));
+    $('ly-radar').addEventListener('change',e=>{const r=radar.current();if(!r)return;e.target.checked?r.addTo(map):map.removeLayer(r);});
   }
-  async function tropical(){
-    try{const g=await getJSON('https://www.nhc.noaa.gov/CurrentStorms.json');const st=g.activeStorms||[];
-      if(layers.trop)map.removeLayer(layers.trop);layers.trop=L.layerGroup();
-      const CL={HU:'Hurricane',TS:'Tropical storm',TD:'Tropical depression',STS:'Subtropical storm',PTC:'Post-tropical cyclone'};
-      st.forEach(s=>{L.circleMarker([s.latitudeNumeric,s.longitudeNumeric],{radius:9,color:'#fff',weight:2,fillColor:s.classification==='HU'?'#C2362E':'#E0812F',fillOpacity:1})
-        .bindPopup(`<b>${esc(CL[s.classification]||s.classification)} ${esc(s.name)}</b><br>${esc(s.intensity)} kt, ${esc(s.pressure)} mb<br>Moving ${esc(s.movementDir)}° at ${esc(s.movementSpeed)} kt`).addTo(layers.trop);});
-      if($('ly-trop').checked)layers.trop.addTo(map);status('trop',st.length?st.length+' active':'none');
-      $('trop-list').innerHTML=st.length?st.map(s=>`<div class="warn" style="cursor:default"><b>${esc(CL[s.classification]||s.classification)} ${esc(s.name)}</b>${esc(Math.round(s.intensity*1.15078))} mph winds, ${esc(s.latitude)} ${esc(s.longitude)}</div>`).join('')+'<a href="https://www.nhc.noaa.gov" target="_blank" rel="noopener">National Hurricane Center</a>':'No active tropical storms.';
-    }catch(e){status('trop','could not load');$('trop-list').innerHTML='Open the <a href="https://www.nhc.noaa.gov" target="_blank" rel="noopener">National Hurricane Center</a>.';}
+  const note=(id,t,bad)=>{const e=$('ls-'+id);if(e){e.textContent=t;e.className=bad?'bad':'';}};
+  async function load(l){
+    if(!$('ly-'+l.id).checked&&!l.side)return;
+    try{const data=l.load?await l.load():await getJSON(l.url);const st=state[l.id]||(state[l.id]={});
+      if(st.layer)map.removeLayer(st.layer);st.layer=l.draw(data);
+      if($('ly-'+l.id).checked){st.layer.addTo(map);if(l.back&&st.layer.bringToBack)st.layer.bringToBack();}
+      note(l.id,l.note(data));l.side&&l.side(data,st.layer);
+    }catch(e){note(l.id,'could not load',true);if(l.id==='warn')$('warn-list').innerHTML='Warnings could not load. Check <a href="https://www.weather.gov" target="_blank" rel="noopener">weather.gov</a>.';
+      if(l.id==='cells')$('cell-list').textContent='Storm cells could not load.';if(l.id==='trop')$('trop-list').innerHTML='Open the <a href="https://www.nhc.noaa.gov" target="_blank" rel="noopener">National Hurricane Center</a>.';}
   }
-  function sites(){
-    const S={KILX:[40.150,-89.337,'Lincoln IL'],KLSX:[38.699,-90.683,'St. Louis'],KLOT:[41.605,-88.085,'Chicago'],KPAH:[37.068,-88.772,'Paducah'],KSGF:[37.235,-93.401,'Springfield MO'],KDVN:[41.612,-90.581,'Quad Cities'],KVWX:[38.260,-87.725,'Evansville'],KEAX:[38.810,-94.264,'Kansas City'],KDMX:[41.731,-93.723,'Des Moines'],KIND:[39.708,-86.280,'Indianapolis']};
-    const g=L.layerGroup();Object.entries(S).forEach(([k,[la,lo,n]])=>L.circleMarker([la,lo],{radius:5,color:'#9FDCE4',weight:2,fillColor:'#11283A',fillOpacity:1})
-      .bindPopup(`<b>${k} ${n}</b><br><a href="https://radar.weather.gov/station/${k.toLowerCase()}/standard" target="_blank" rel="noopener">Open this radar</a>`).addTo(g));
-    g.addTo(map);L.circleMarker([38.52,-89.98],{radius:6,color:'#E7C76A',weight:2,fill:false}).bindPopup('<b>Belleville</b>').addTo(map);
-  }
-  const toggles={radar:'radar',outlook:'outlook',torprob:'torprob',watch:'watch',warn:'warn',trop:'trop'};
-  Object.keys(toggles).forEach(k=>$('ly-'+k).addEventListener('change',e=>{const l=layers[k];if(!l)return;e.target.checked?l.addTo(map):map.removeLayer(l);}));
-  function refreshAll(){radar();outlook();torprob();watches();warnings();tropical();stamp();}
+  /* radar: latest composite plus an optional 50-minute loop */
+  const radar=(function(){
+    const T=s=>`${IEM}/cache/tile.py/1.0.0/nexrad-n0q-900913${s}/{z}/{x}/{y}.png`;
+    const ages=['-m50m','-m45m','-m40m','-m35m','-m30m','-m25m','-m20m','-m15m','-m10m','-m05m',''];
+    let latest,frames=null,idx=10,timer=null;const op=()=>+$('radar-op').value/100;
+    function setLatest(){if(latest)map.removeLayer(latest);latest=L.tileLayer(T('')+'?t='+Date.now(),{opacity:op(),zIndex:5,attribution:'Radar: IEM'});if($('ly-radar').checked&&!timer)latest.addTo(map);note('radar','updated '+clock(Date.now()));}
+    function play(){
+      if(timer){clearInterval(timer);timer=null;frames.forEach(f=>map.removeLayer(f));if($('ly-radar').checked)latest.addTo(map);$('loop-btn').textContent='Play radar loop';$('loop-time').textContent='Latest scan';return;}
+      map.removeLayer(latest);frames=ages.map(a=>L.tileLayer(T(a)+'?t='+Date.now(),{opacity:0,zIndex:5}).addTo(map));
+      $('loop-btn').textContent='Stop loop';idx=0;
+      timer=setInterval(()=>{frames.forEach((f,k)=>f.setOpacity(k===idx?op():0));const m=ages[idx]?+ages[idx].slice(2,4):0;$('loop-time').textContent=m?m+' min ago':'Latest scan';idx=(idx+1)%frames.length;},650);
+    }
+    return {setLatest,play,current:()=>latest,opacity:()=>{if(latest)latest.setOpacity(op());}};
+  })();
+  function refreshAll(){radar.setLatest();LAYERS.forEach(load);$('live-updated').textContent='Updated '+clock(Date.now());}
+  let started=false;
   window.startLive=()=>{
-    if(started){setTimeout(()=>map.invalidateSize(),50);return;}started=true;
-    map=L.map('livemap',{zoomControl:true}).setView([39.4,-89.8],6);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:11}).addTo(map);
-    sites();refreshAll();
-    setInterval(()=>{warnings();watches();stamp();},120000);
-    setInterval(()=>{radar();outlook();torprob();tropical();},300000);
+    if(started){setTimeout(()=>map.invalidateSize(),60);return;}started=true;
+    map=L.map('livemap',{scrollWheelZoom:false,worldCopyJump:true}).setView([39.4,-89.8],6);
+    map.on('click focus',()=>map.scrollWheelZoom.enable());map.on('mouseout blur',()=>map.scrollWheelZoom.disable());
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:12}).addTo(map);
+    const sites={KILX:[40.150,-89.337,'Lincoln IL'],KLSX:[38.699,-90.683,'St. Louis'],KLOT:[41.605,-88.085,'Chicago'],KPAH:[37.068,-88.772,'Paducah'],KSGF:[37.235,-93.401,'Springfield MO'],KDVN:[41.612,-90.581,'Quad Cities'],KVWX:[38.260,-87.725,'Evansville'],KEAX:[38.810,-94.264,'Kansas City'],KDMX:[41.731,-93.723,'Des Moines'],KIND:[39.708,-86.280,'Indianapolis']};
+    Object.entries(sites).forEach(([k,[la,lo,n]])=>L.circleMarker([la,lo],{radius:5,color:'#9FDCE4',weight:2,fillColor:'#11283A',fillOpacity:1}).bindPopup(`<b>${k} ${n}</b><br><a href="https://radar.weather.gov/station/${k.toLowerCase()}/standard" target="_blank" rel="noopener">Open this radar</a>`).addTo(map));
+    L.circleMarker([38.52,-89.98],{radius:6,color:'#E7C76A',weight:2,fill:false}).bindPopup('<b>Belleville</b>').addTo(map);
+    const zoomCls=()=>$('livemap').classList.toggle('obs-far',map.getZoom()<7);map.on('zoomend',zoomCls);zoomCls();
+    layerPanel();refreshAll();
+    $('loop-btn').onclick=()=>radar.play();$('radar-op').oninput=()=>radar.opacity();$('live-refresh').onclick=refreshAll;
+    $('cell-list').addEventListener('click',e=>{const d=e.target.closest('.cell');if(d){map.setView(d.dataset.ll.split(',').map(Number),9);}});
+    LAYERS.forEach(l=>setInterval(()=>load(l),l.every*60000));
+    setInterval(()=>{radar.setLatest();$('live-updated').textContent='Updated '+clock(Date.now());},5*60000);
   };
 })();
 

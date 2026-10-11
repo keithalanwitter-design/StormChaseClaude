@@ -14,7 +14,9 @@ app = (root / "src/app.html").read_text()
 app = app.replace("__GEO__", (root / "data/geo.json").read_text().strip())
 app = app.replace("__FIT__", (root / "data/fit.json").read_text().strip())
 LIVE = ('<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">\n'
-        '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>')
+        '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>\n'
+        '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>\n'
+        '<script src="config.js"></script>')
 (root / "dist").mkdir(exist_ok=True)
 # the shared Claude page can't load outside data, so it shows a link to the live map instead
 (root / "dist/artifact.html").write_text(app.replace("<!--LIVE_HEAD-->\n", ""))

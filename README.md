@@ -28,6 +28,8 @@ Not an official forecast. Always follow NWS warnings.
 ## How the app is built
 
 - `src/app.html` is the one source file. The **WHIRL engine** (every factor, weight and tier) is a single `WHIRL` object near the top of its script; the calculator, the "how the score works" table and the chase log all read from it.
-- `python3 tools/build.py` turns it into `index.html` (GitHub Pages; saves the chase log in your browser) and `dist/artifact.html` (the shared Claude page, where Keith and Brian keep one chase log together).
+- `python3 tools/build.py` turns it into `index.html` (the website) and `dist/artifact.html` (the Claude copy).
+- **Shared chase log**: fill in `config.js` and run `supabase/setup.sql` (steps in `supabase/README.md`). Until then the log saves in each browser.
+- **Live map layers**: each overlay is one entry in the `LAYERS` list in `src/app.html` (feed URL, how to draw it, status text). Add an entry to add a layer.
 - `data/geo.json` holds the map shapes and case locations; `data/fit.json` places cases you add on the map.
 - The **chase log** is the learning loop: score a day, mark tornado or bust afterward, and the "Is the score working?" chart finds the cutoff that best separates the two.
