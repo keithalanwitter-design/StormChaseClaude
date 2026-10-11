@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* Layout: an app shell. Top bar with view tabs (bottom bar on phones); each view is one job: Home, Score, Chase log, Cases, Guide. */
 :root{
@@ -201,10 +203,26 @@ ul.plain li{margin:5px 0}
 .sources{columns:2;padding-left:18px;font-size:14px}
 .sources li{margin:4px 0;break-inside:avoid}
 
+.livebar{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-bottom:12px}
+.layer{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.layer input{width:17px;height:17px;accent-color:var(--teal)}
+.layer small{font-weight:400;color:var(--muted)}
+.livegrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px}
+#livemap{height:min(72vh,640px);border-radius:12px;border:1px solid var(--rule);background:var(--scope)}
+.side{display:grid;gap:14px;align-content:start;max-height:min(72vh,640px);overflow:auto}
+.side h3{font-size:18px;margin-bottom:6px}
+.warn{border-left:4px solid var(--rule);padding:6px 10px;background:var(--paper);border-radius:0 8px 8px 0;margin-bottom:6px;font-size:14px;cursor:pointer}
+.warn b{display:block}
+.warn.TO{border-color:#E0302B}.warn.SV{border-color:#F2A900}.warn.FF{border-color:#2EA44F}
+.legend-sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+.leaflet-container{font:14px/1.4 var(--body)}
+.leaflet-popup-content b{font-size:15px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:8px;font-weight:600;z-index:100;font-size:15px}
 
 @media (max-width:860px){
-  .hero,.grid2,.casemap{grid-template-columns:1fr}
+  .hero,.grid2,.casemap,.livegrid{grid-template-columns:1fr}
+  .side{max-height:none}
+  #livemap{height:62vh}
   .links{grid-template-columns:1fr 1fr}
   .ranks li{grid-template-columns:1fr}
   .sources{columns:1}
@@ -243,6 +261,7 @@ ul.plain li{margin:5px 0}
       <button data-go="score"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/></svg>Score</button>
       <button data-go="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>Chase log</button>
       <button data-go="cases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-6-5.5-6-11a6 6 0 1 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2"/></svg>Cases</button>
+      <button data-go="live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg>Live</button>
       <button data-go="guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h7v15H4zM13 5h7v15h-7z"/></svg>Guide</button>
     </nav>
     <span class="sync" id="sync"><i></i>Connecting</span>
@@ -385,6 +404,30 @@ ul.plain li{margin:5px 0}
   </details>
 </section>
 
+<!-- LIVE -->
+<section class="view wrap" id="v-live" aria-label="Live" hidden>
+  <div class="head"><div><h2>Live map</h2><p>Radar, SPC outlooks, watches, warnings and tropical storms on one map. Warnings refresh every two minutes and radar every five.</p></div><span class="note" id="live-updated"></span></div>
+  <div id="live-off" hidden class="empty"><h3>The live map runs on the WHIRL website</h3><p>This shared page can't load outside weather data. Open the public WHIRL site for live radar, outlooks, watches and warnings; the chase log stays here.</p><a class="btn primary" href="https://keithalanwitter-design.github.io/StormChaseClaude/#live" target="_blank" rel="noopener">Open the live map</a></div>
+  <div id="live-on">
+    <div class="livebar" role="group" aria-label="Map layers">
+      <label class="layer"><input type="checkbox" id="ly-radar" checked> Radar <small id="ls-radar"></small></label>
+      <label class="layer"><input type="checkbox" id="ly-outlook" checked> SPC Day 1 outlook <small id="ls-outlook"></small></label>
+      <label class="layer"><input type="checkbox" id="ly-torprob"> Tornado odds <small id="ls-torprob"></small></label>
+      <label class="layer"><input type="checkbox" id="ly-watch" checked> Watches <small id="ls-watch"></small></label>
+      <label class="layer"><input type="checkbox" id="ly-warn" checked> Warnings <small id="ls-warn"></small></label>
+      <label class="layer"><input type="checkbox" id="ly-trop" checked> Tropical <small id="ls-trop"></small></label>
+    </div>
+    <div class="livegrid">
+      <div id="livemap" aria-label="Live weather map"></div>
+      <div class="side">
+        <div><h3>Active warnings</h3><div id="warn-list" class="note">Loading…</div></div>
+        <div><h3>Tropical storms</h3><div id="trop-list" class="note">Loading…</div></div>
+        <div class="note"><span class="legend-sw" style="background:#E0302B"></span>Tornado <span class="legend-sw" style="background:#F2A900;margin-left:8px"></span>Severe <span class="legend-sw" style="background:#2EA44F;margin-left:8px"></span>Flash flood<br>Radar: Iowa Environmental Mesonet composite. Outlooks: SPC via NOAA map services. Warnings: National Weather Service. Tropical: National Hurricane Center.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- GUIDE -->
 <section class="view wrap" id="v-guide" aria-label="Guide" hidden>
   <div class="head"><div><h2>Field guide</h2><p>Go or no-go, timing, picking the storm, and what the research says matters most.</p></div></div>
@@ -521,13 +564,14 @@ async function names(ids){
 }
 
 /* ================= NAVIGATION ================= */
-const VIEWS=['home','score','log','cases','guide'];
+const VIEWS=['home','score','log','cases','live','guide'];
 function go(v,push=true){
   if(!VIEWS.includes(v))v='home';
   VIEWS.forEach(x=>$('v-'+x).hidden=x!==v);
   document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===v?'page':'false'));
   if(push){try{history.replaceState(null,'','#'+v);}catch(e){}}
   window.scrollTo(0,0);
+  if(v==='live'&&window.startLive)window.startLive();
 }
 document.addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(t){e.preventDefault();go(t.dataset.go);}});
 
@@ -682,6 +726,89 @@ $('entries').addEventListener('click',async e=>{const b=e.target.closest('[data-
     catch(err){toast(err&&err.code==='invalid_argument'?'You can view cases but not add them. Ask the owner for Contributor access.':'Could not add the case. Try again.');}
     btn.disabled=false;});
   Store.on(draw);draw();
+})();
+
+/* ================= LIVE MAP ================= */
+(function(){
+  if(!window.L){$('live-on').hidden=true;$('live-off').hidden=false;return;}
+  let map,started=false;const layers={},status=(k,t)=>{const e=$('ls-'+k);if(e)e.textContent=t;};
+  const SPC_COLORS={TSTM:'#C1E9C1',MRGL:'#66A366',SLGT:'#FFE066',ENH:'#FFA366',MDT:'#E06666',HIGH:'#EE99EE'};
+  const findCode=p=>{for(const v of Object.values(p||{})){const m=String(v).toUpperCase().match(/\b(TSTM|MRGL|SLGT|ENH|MDT|HIGH)\b/);if(m)return m[1];}return null;};
+  const getJSON=async u=>{const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw new Error(r.status);return r.json();};
+  const time=d=>d?new Date(d).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):'';
+  function stamp(){$('live-updated').textContent='Updated '+new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});}
+  function radar(){
+    if(layers.radar)map.removeLayer(layers.radar);
+    layers.radar=L.tileLayer('https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png?t='+Date.now(),{opacity:.7,zIndex:5,attribution:'Radar: IEM'});
+    if($('ly-radar').checked)layers.radar.addTo(map);status('radar','composite, '+time(Date.now()));
+  }
+  async function outlook(){
+    try{const g=await getJSON('https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer/1/query?where=1%3D1&outFields=*&f=geojson');
+      if(layers.outlook)map.removeLayer(layers.outlook);
+      layers.outlook=L.geoJSON(g,{style:f=>{const c=SPC_COLORS[findCode(f.properties)]||'#88a';return {color:c,weight:1.5,fillColor:c,fillOpacity:.22};},
+        onEachFeature:(f,l)=>{const c=findCode(f.properties);l.bindPopup(`<b>SPC Day 1: ${c||'Outlook'}</b><br>${esc(f.properties.label2||f.properties.LABEL2||'')}`);}});
+      if($('ly-outlook').checked)layers.outlook.addTo(map);layers.outlook.bringToBack&&layers.outlook.bringToBack();
+      const codes=[...new Set(g.features.map(f=>findCode(f.properties)).filter(Boolean))];status('outlook',codes.length?'highest '+['TSTM','MRGL','SLGT','ENH','MDT','HIGH'].filter(c=>codes.includes(c)).pop():'no risk areas');
+    }catch(e){status('outlook','could not load');}
+  }
+  async function torprob(){
+    try{const g=await getJSON('https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer/3/query?where=1%3D1&outFields=*&f=geojson');
+      if(layers.torprob)map.removeLayer(layers.torprob);
+      layers.torprob=L.geoJSON(g,{style:()=>({color:'#B8322A',weight:2,dashArray:'5 4',fillOpacity:.05}),onEachFeature:(f,l)=>{const p=f.properties||{};l.bindPopup(`<b>Tornado odds</b><br>${esc(p.label2||p.LABEL2||p.label||p.LABEL||'')}`);}});
+      if($('ly-torprob').checked)layers.torprob.addTo(map);status('torprob',g.features.length?g.features.length+' areas':'none today');
+    }catch(e){status('torprob','could not load');}
+  }
+  async function watches(){
+    try{const g=await getJSON('https://mesonet.agron.iastate.edu/json/spcwatch.py');
+      if(layers.watch)map.removeLayer(layers.watch);
+      layers.watch=L.geoJSON(g,{style:f=>{const t=JSON.stringify(f.properties||{}).toUpperCase();const tor=t.includes('TOR');return {color:tor?'#E0302B':'#3B6FD8',weight:3,fill:false};},
+        onEachFeature:(f,l)=>{const p=f.properties||{};const t=JSON.stringify(p).toUpperCase().includes('TOR')?'Tornado watch':'Severe thunderstorm watch';l.bindPopup(`<b>${t} ${esc(p.number||p.num||'')}</b><br>Until ${esc(time(p.expire||p.expire_utc||p.utc_expire))}`);}});
+      if($('ly-watch').checked)layers.watch.addTo(map);status('watch',g.features.length?g.features.length+' active':'none');
+    }catch(e){status('watch','could not load');}
+  }
+  const WEV=['Tornado Warning','Severe Thunderstorm Warning','Flash Flood Warning'];
+  const code=ev=>ev.startsWith('Tornado')?'TO':ev.startsWith('Severe')?'SV':'FF';
+  const WCOL={TO:'#E0302B',SV:'#F2A900',FF:'#2EA44F'};
+  async function warnings(){
+    try{const g=await getJSON('https://api.weather.gov/alerts/active?event='+encodeURIComponent(WEV.join(',')));
+      const feats=g.features.filter(f=>f.geometry);
+      if(layers.warn)map.removeLayer(layers.warn);
+      layers.warn=L.geoJSON({type:'FeatureCollection',features:feats},{style:f=>{const c=WCOL[code(f.properties.event)];return {color:c,weight:2.5,fillColor:c,fillOpacity:.18};},
+        onEachFeature:(f,l)=>{const p=f.properties;l.bindPopup(`<b>${esc(p.event)}</b><br>${esc(p.areaDesc)}<br>Until ${esc(time(p.expires))}<br><span style="color:#56656B">${esc(p.senderName)}</span>`);f._layer=l;}});
+      if($('ly-warn').checked)layers.warn.addTo(map);
+      const order={TO:0,SV:1,FF:2};const list=feats.slice().sort((a,b)=>order[code(a.properties.event)]-order[code(b.properties.event)]);
+      status('warn',feats.length?feats.length+' active':'none');
+      $('warn-list').innerHTML=list.length?list.slice(0,40).map((f,k)=>`<div class="warn ${code(f.properties.event)}" data-k="${k}" tabindex="0" role="button"><b>${esc(f.properties.event)}</b>${esc(f.properties.areaDesc.slice(0,90))}<br><span class="muted">Until ${esc(time(f.properties.expires))}</span></div>`).join(''):'No tornado, severe or flash flood warnings right now.';
+      $('warn-list').onclick=$('warn-list').onkeydown=e=>{if(e.type==='keydown'&&e.key!=='Enter')return;const d=e.target.closest('.warn');if(!d)return;const f=list[+d.dataset.k];map.fitBounds(f._layer.getBounds(),{maxZoom:9});f._layer.openPopup();};
+    }catch(e){status('warn','could not load');$('warn-list').innerHTML='Warnings could not load. Check <a href="https://www.weather.gov" target="_blank" rel="noopener">weather.gov</a>.';}
+  }
+  async function tropical(){
+    try{const g=await getJSON('https://www.nhc.noaa.gov/CurrentStorms.json');const st=g.activeStorms||[];
+      if(layers.trop)map.removeLayer(layers.trop);layers.trop=L.layerGroup();
+      const CL={HU:'Hurricane',TS:'Tropical storm',TD:'Tropical depression',STS:'Subtropical storm',PTC:'Post-tropical cyclone'};
+      st.forEach(s=>{L.circleMarker([s.latitudeNumeric,s.longitudeNumeric],{radius:9,color:'#fff',weight:2,fillColor:s.classification==='HU'?'#C2362E':'#E0812F',fillOpacity:1})
+        .bindPopup(`<b>${esc(CL[s.classification]||s.classification)} ${esc(s.name)}</b><br>${esc(s.intensity)} kt, ${esc(s.pressure)} mb<br>Moving ${esc(s.movementDir)}° at ${esc(s.movementSpeed)} kt`).addTo(layers.trop);});
+      if($('ly-trop').checked)layers.trop.addTo(map);status('trop',st.length?st.length+' active':'none');
+      $('trop-list').innerHTML=st.length?st.map(s=>`<div class="warn" style="cursor:default"><b>${esc(CL[s.classification]||s.classification)} ${esc(s.name)}</b>${esc(Math.round(s.intensity*1.15078))} mph winds, ${esc(s.latitude)} ${esc(s.longitude)}</div>`).join('')+'<a href="https://www.nhc.noaa.gov" target="_blank" rel="noopener">National Hurricane Center</a>':'No active tropical storms.';
+    }catch(e){status('trop','could not load');$('trop-list').innerHTML='Open the <a href="https://www.nhc.noaa.gov" target="_blank" rel="noopener">National Hurricane Center</a>.';}
+  }
+  function sites(){
+    const S={KILX:[40.150,-89.337,'Lincoln IL'],KLSX:[38.699,-90.683,'St. Louis'],KLOT:[41.605,-88.085,'Chicago'],KPAH:[37.068,-88.772,'Paducah'],KSGF:[37.235,-93.401,'Springfield MO'],KDVN:[41.612,-90.581,'Quad Cities'],KVWX:[38.260,-87.725,'Evansville'],KEAX:[38.810,-94.264,'Kansas City'],KDMX:[41.731,-93.723,'Des Moines'],KIND:[39.708,-86.280,'Indianapolis']};
+    const g=L.layerGroup();Object.entries(S).forEach(([k,[la,lo,n]])=>L.circleMarker([la,lo],{radius:5,color:'#9FDCE4',weight:2,fillColor:'#11283A',fillOpacity:1})
+      .bindPopup(`<b>${k} ${n}</b><br><a href="https://radar.weather.gov/station/${k.toLowerCase()}/standard" target="_blank" rel="noopener">Open this radar</a>`).addTo(g));
+    g.addTo(map);L.circleMarker([38.52,-89.98],{radius:6,color:'#E7C76A',weight:2,fill:false}).bindPopup('<b>Belleville</b>').addTo(map);
+  }
+  const toggles={radar:'radar',outlook:'outlook',torprob:'torprob',watch:'watch',warn:'warn',trop:'trop'};
+  Object.keys(toggles).forEach(k=>$('ly-'+k).addEventListener('change',e=>{const l=layers[k];if(!l)return;e.target.checked?l.addTo(map):map.removeLayer(l);}));
+  function refreshAll(){radar();outlook();torprob();watches();warnings();tropical();stamp();}
+  window.startLive=()=>{
+    if(started){setTimeout(()=>map.invalidateSize(),50);return;}started=true;
+    map=L.map('livemap',{zoomControl:true}).setView([39.4,-89.8],6);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:11}).addTo(map);
+    sites();refreshAll();
+    setInterval(()=>{warnings();watches();stamp();},120000);
+    setInterval(()=>{radar();outlook();torprob();tropical();},300000);
+  };
 })();
 
 /* ================= GUIDE ================= */

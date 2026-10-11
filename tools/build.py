@@ -13,8 +13,12 @@ root = pathlib.Path(__file__).resolve().parent.parent
 app = (root / "src/app.html").read_text()
 app = app.replace("__GEO__", (root / "data/geo.json").read_text().strip())
 app = app.replace("__FIT__", (root / "data/fit.json").read_text().strip())
+LIVE = ('<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">\n'
+        '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>')
 (root / "dist").mkdir(exist_ok=True)
-(root / "dist/artifact.html").write_text(app)
+# the shared Claude page can't load outside data, so it shows a link to the live map instead
+(root / "dist/artifact.html").write_text(app.replace("<!--LIVE_HEAD-->\n", ""))
+app = app.replace("<!--LIVE_HEAD-->", LIVE)
 head, rest = app.split("</style>", 1)
 page = ("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n"
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
